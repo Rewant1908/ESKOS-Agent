@@ -64,6 +64,7 @@ class QdrantRAG:
                     "entities": ch.get("entities", []),
                     "trust_score": ch["trust_score"],
                     "version": ch["version"],
+                    "org_id": ch.get("org_id"),
                     "text": ch["text"]
                 }
             ))
@@ -71,7 +72,14 @@ class QdrantRAG:
         if points:
             self.client.upsert(collection_name=collection_name, points=points)
 
-    def search(self, rag_type: str, query_vector: List[float], limit: int = 5, score_threshold: float = 0.5) -> List[Dict[str, Any]]:
+    def search(
+        self,
+        rag_type: str,
+        query_vector: List[float],
+        limit: int = 5,
+        score_threshold: float = 0.5,
+        filters: Optional[Dict[str, Any]] = None,
+    ) -> List[Dict[str, Any]]:
         """Performs cosine-similarity semantic search on a specific RAG type."""
         if not self.client:
             return []
@@ -93,21 +101,25 @@ class QdrantRAG:
                     "text": r.payload.get("text"),
                     "chunk_type": r.payload.get("chunk_type"),
                     "trust_score": r.payload.get("trust_score"),
+                    "org_id": r.payload.get("org_id"),
                     "score": r.score,
                     "collection": collection_name
                 })
+            if filters and filters.get("org_id"):
+                allowed_orgs = {filters["org_id"], "shared"}
+                hits = [hit for hit in hits if hit.get("org_id") in allowed_orgs or hit.get("org_id") is None]
             return hits
         except Exception as e:
             print(f"[rag_manager] Search error: {e}", flush=True)
             return []
 
-    def search_product(self, query_vector: List[float], limit: int = 5) -> List[Dict[str, Any]]:
+    def search_product(self, query_vector: List[float], limit: int = 5, filters: Optional[Dict[str, Any]] = None) -> List[Dict[str, Any]]:
         """Specialized retrieval for product specifications. Stricter threshold."""
-        return self.search("product", query_vector, limit=limit, score_threshold=0.65)
+        return self.search("product", query_vector, limit=limit, score_threshold=0.65, filters=filters)
 
-    def search_scientific(self, query_vector: List[float], limit: int = 5) -> List[Dict[str, Any]]:
+    def search_scientific(self, query_vector: List[float], limit: int = 5, filters: Optional[Dict[str, Any]] = None) -> List[Dict[str, Any]]:
         """Specialized retrieval for scientific methods and applications."""
-        return self.search("scientific", query_vector, limit=limit, score_threshold=0.55)
+        return self.search("scientific", query_vector, limit=limit, score_threshold=0.55, filters=filters)
 
     def search_cross_rag(self, query_vector: List[float], intents: List[str], limit_per_intent: int = 3) -> Dict[str, List[Dict[str, Any]]]:
         """Queries multiple collections based on requested intents and aggregates results."""
@@ -117,4 +129,3 @@ class QdrantRAG:
                 hits = self.search(intent, query_vector, limit=limit_per_intent, score_threshold=0.5)
                 aggregated[intent] = hits
         return aggregated
-

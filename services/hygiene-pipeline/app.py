@@ -16,6 +16,7 @@ import uuid
 
 import redis
 from confluent_kafka import Consumer, Producer
+from flask import Flask, jsonify, request
 
 from checks import dedup, entropy, prompt_injection, semantic_spam, structural
 import audit
@@ -31,6 +32,71 @@ QUARANTINE_TOPIC = "hygiene-quarantine"
 
 r = redis.Redis.from_url(REDIS_URL)
 producer = Producer({"bootstrap.servers": KAFKA_BROKERS})
+api = Flask(__name__)
+
+
+REQUIRED_INGEST_FIELDS = {"org_id", "source_id", "extracted_text"}
+
+
+def _delivery_report(err, msg):
+    if err is not None:
+        print(f"[hygiene-pipeline] Kafka delivery failed: {err}", flush=True)
+
+
+def normalize_ingest_payload(payload: dict) -> dict:
+    """Normalize external ingress payloads into the raw-ingest event contract."""
+    missing = sorted(field for field in REQUIRED_INGEST_FIELDS if not payload.get(field))
+    if missing:
+        raise ValueError(f"missing required field(s): {', '.join(missing)}")
+
+    doc_id = payload.get("doc_id") or str(uuid.uuid5(
+        uuid.NAMESPACE_URL,
+        f"{payload.get('org_id')}:{payload.get('source_id')}:{payload.get('source_identifier', '')}:{payload.get('document_type', '')}:{payload.get('extracted_text', '')[:500]}"
+    ))
+
+    return {
+        "doc_id": doc_id,
+        "org_id": payload["org_id"],
+        "source_id": payload["source_id"],
+        "source_type": payload.get("source_type", "unknown"),
+        "source_category": payload.get("source_category", payload.get("source_type", "unknown_website")),
+        "source_identifier": payload.get("source_identifier"),
+        "connector_identity": payload.get("connector_identity", "api-ingest"),
+        "document_type": payload.get("document_type", "unknown"),
+        "extracted_text": payload["extracted_text"],
+        "metadata": payload.get("metadata", {}),
+        "version": payload.get("version", "1.0"),
+        "content_type": payload.get("content_type", "text"),
+    }
+
+
+@api.get("/healthz")
+def healthz():
+    return jsonify({"status": "ok", "kafka_brokers": KAFKA_BROKERS})
+
+
+@api.post("/api/v1/knowledge/ingest")
+def enqueue_ingest():
+    """HTTP ingress used by Kong/Envoy. Publishes normalized records to raw-ingest."""
+    payload = request.get_json(force=True, silent=True) or {}
+    try:
+        record = normalize_ingest_payload(payload)
+    except ValueError as exc:
+        return jsonify({"error": str(exc)}), 400
+
+    producer.produce(
+        INPUT_TOPIC,
+        key=record["doc_id"],
+        value=json.dumps(record).encode("utf-8"),
+        callback=_delivery_report,
+    )
+    producer.flush()
+
+    return jsonify({
+        "job_id": record["doc_id"],
+        "status": "QUEUED",
+        "topic": INPUT_TOPIC,
+    }), 202
 
 
 def run_hygiene_checks(record: dict) -> dict:

@@ -4,6 +4,8 @@ This repository contains the complete implementation of the ESKOS Agent System, 
 
 The system targets a shared-knowledge-graph, brand-tagged-entity model agreed for Borosil Scientific + Goel Scientific (`org_id` on every document/entity — see `common/brand_taxonomy.md`).
 
+For the executable service flow, payload contracts, and local runbook, see `ARCHITECTURE.md`.
+
 ## System Components & Phases
 
 ### Phase 3: Trust Firewall & Intelligent Ingestion

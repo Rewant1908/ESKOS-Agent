@@ -13,7 +13,7 @@ async function queryKnowledgeFabric(query: string, orgId: string, ragType: strin
             org_id: orgId,
             rag_type: ragType
         });
-        return response.data.context;
+        return response.data.formatted_context;
     } catch (error) {
         console.error("[AgentTool] Error querying knowledge fabric:", error);
         return "Knowledge Fabric is currently unreachable.";

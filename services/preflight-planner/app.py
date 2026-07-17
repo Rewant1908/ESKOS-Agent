@@ -10,6 +10,7 @@ useful for local dev without spinning up the whole Kafka stack first.
 
 import json
 import os
+import time
 from pathlib import Path
 
 import jsonschema
@@ -29,6 +30,12 @@ SCHEMA_MAP = {
 
 REALTIME_SOURCE_TYPES = {"wordpress-webhook", "product-spec-update", "erp-connector"}
 BATCH_SOURCE_TYPES = {"bulk-upload", "research-paper-corpus", "competitor-crawl", "historical-manual-import"}
+
+KAFKA_BROKERS = os.environ.get("KAFKA_BROKERS", "localhost:9092")
+INPUT_TOPIC = os.environ.get("PREFLIGHT_INPUT_TOPIC", "hygiene-passed")
+OUTPUT_TOPIC = os.environ.get("PREFLIGHT_OUTPUT_TOPIC", "knowledge-fabric-ingest")
+SCHEMA_DLQ_TOPIC = os.environ.get("PREFLIGHT_SCHEMA_DLQ_TOPIC", "dlq.schema-violation")
+BUDGET_HOLD_TOPIC = os.environ.get("PREFLIGHT_BUDGET_HOLD_TOPIC", "hygiene-quarantine")
 
 
 def _load_schema(document_type: str) -> dict | None:
@@ -114,21 +121,107 @@ def plan(record: dict) -> dict:
     return plan_result
 
 
-if __name__ == "__main__":
-    # Smoke test — no Kafka required.
-    sample = {
-        "doc_id": "smoke-test-001",
-        "org_id": "goel-scientific",
-        "document_type": "product_datasheet",
-        "source_type": "wordpress-webhook",
-        "extracted_text": "Borosilicate condenser with 250mm jacket length. " * 40,
-        "metadata": {
-            "product_name": "Liebig Condenser 250mm",
-            "material": "Borosilicate Glass 3.3",
-            "dimensions": "250mm jacket, 24/29 joint",
-            "applications": ["distillation", "reflux"],
-            "category": "condensers",
-        },
+def build_forward_payload(record: dict, plan_result: dict) -> dict:
+    """Preserve source payload and stamp deterministic preflight metadata."""
+    metadata = record.get("metadata") or {}
+    return {
+        **record,
+        "metadata": metadata,
+        "preflight": plan_result,
+        "source_category": record.get("source_category") or record.get("source_type") or "unknown_website",
+        "version": record.get("version", "1.0"),
     }
-    result = plan(sample)
-    print(json.dumps(result, indent=2))
+
+
+def build_dlq_envelope(record: dict, plan_result: dict) -> dict:
+    schema_result = plan_result.get("schema_validation", {})
+    return {
+        "doc_id": record.get("doc_id"),
+        "org_id": record.get("org_id"),
+        "source_id": record.get("source_id"),
+        "failure_stage": "preflight_planner",
+        "failure_reason": schema_result.get("reason", "schema validation failed"),
+        "payload_ref": f"quarantine-store://{record.get('org_id')}/{record.get('doc_id')}",
+        "retry_count": 0,
+        "timestamp": time.time(),
+        "status": "unresolved",
+        "preflight": plan_result,
+    }
+
+
+def route_record(producer, record: dict) -> dict:
+    plan_result = plan(record)
+    doc_id = record.get("doc_id") or ""
+    decision = plan_result["decision"]
+
+    if decision == "proceed_to_knowledge_fabric":
+        payload = build_forward_payload(record, plan_result)
+        producer.produce(OUTPUT_TOPIC, key=doc_id, value=json.dumps(payload).encode("utf-8"))
+        topic = OUTPUT_TOPIC
+    elif decision == "quarantine_schema_violation":
+        payload = build_dlq_envelope(record, plan_result)
+        producer.produce(SCHEMA_DLQ_TOPIC, key=doc_id, value=json.dumps(payload).encode("utf-8"))
+        topic = SCHEMA_DLQ_TOPIC
+    else:
+        payload = build_forward_payload(record, plan_result)
+        producer.produce(BUDGET_HOLD_TOPIC, key=doc_id, value=json.dumps(payload).encode("utf-8"))
+        topic = BUDGET_HOLD_TOPIC
+
+    producer.flush()
+    return {"doc_id": doc_id, "decision": decision, "topic": topic, "preflight": plan_result}
+
+
+def main():
+    from confluent_kafka import Consumer, KafkaError, Producer
+
+    consumer = Consumer({
+        "bootstrap.servers": KAFKA_BROKERS,
+        "group.id": "preflight-planner",
+        "auto.offset.reset": "earliest",
+    })
+    producer = Producer({"bootstrap.servers": KAFKA_BROKERS})
+    consumer.subscribe([INPUT_TOPIC])
+
+    print(f"[preflight-planner] listening on {INPUT_TOPIC} @ {KAFKA_BROKERS}", flush=True)
+
+    try:
+        while True:
+            msg = consumer.poll(1.0)
+            if msg is None:
+                continue
+            if msg.error():
+                if msg.error().code() != KafkaError._PARTITION_EOF:
+                    print(f"[preflight-planner] consumer error: {msg.error()}", flush=True)
+                continue
+
+            try:
+                record = json.loads(msg.value().decode("utf-8"))
+                result = route_record(producer, record)
+                print(f"[preflight-planner] {result['doc_id']} -> {result['decision']} ({result['topic']})", flush=True)
+            except Exception as exc:
+                print(f"[preflight-planner] failed to process message: {exc}", flush=True)
+    except KeyboardInterrupt:
+        pass
+    finally:
+        consumer.close()
+
+
+if __name__ == "__main__":
+    if os.environ.get("PREFLIGHT_SMOKE_TEST") == "1":
+        sample = {
+            "doc_id": "smoke-test-001",
+            "org_id": "goel-scientific",
+            "document_type": "product_datasheet",
+            "source_type": "wordpress-webhook",
+            "extracted_text": "Borosilicate condenser with 250mm jacket length. " * 40,
+            "metadata": {
+                "product_name": "Liebig Condenser 250mm",
+                "material": "Borosilicate Glass 3.3",
+                "dimensions": "250mm jacket, 24/29 joint",
+                "applications": ["distillation", "reflux"],
+                "category": "condensers",
+            },
+        }
+        print(json.dumps(plan(sample), indent=2))
+    else:
+        main()

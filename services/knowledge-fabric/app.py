@@ -66,6 +66,7 @@ def store_knowledge_payload(payload: Dict[str, Any]):
     for ch in chunks:
         ch_entities = extract_entities(ch["text"], org_id)
         ch["entities"] = [e["entity_id"] for e in ch_entities]
+        ch["org_id"] = org_id
 
     # 3. Embedding Generation
     embeddings = []
@@ -179,12 +180,13 @@ def query_knowledge(payload: QueryPayload):
     vec = get_embedding(payload.query)
     
     # 1. Specialized RAG Retrieval
+    filters = {**(payload.filters or {}), "org_id": payload.org_id}
     if payload.rag_type == "product":
-        hits = rag.search_product(vec, limit=payload.limit)
+        hits = rag.search_product(vec, limit=payload.limit, filters=filters)
     elif payload.rag_type == "scientific":
-        hits = rag.search_scientific(vec, limit=payload.limit)
+        hits = rag.search_scientific(vec, limit=payload.limit, filters=filters)
     else:
-        hits = rag.search(payload.rag_type, vec, limit=payload.limit)
+        hits = rag.search(payload.rag_type, vec, limit=payload.limit, filters=filters)
         
     # 2. Graph Traversal Enrichment
     # Extract entities from the retrieved chunks and find neighbors
@@ -204,6 +206,7 @@ def query_knowledge(payload: QueryPayload):
                 
     return {
         "query": payload.query,
+        "org_id": payload.org_id,
         "rag_type": payload.rag_type,
         "vector_hits": hits,
         "graph_context": graph_context
@@ -230,13 +233,17 @@ def get_knowledge_context(payload: QueryPayload):
         context_parts.append("### Related Entities & Relationships:\n")
         for doc_id, neighbors in result["graph_context"].items():
             for n in neighbors:
-                context_parts.append(f"- {n.get('source', '')} --[{n.get('type', '')}]--> {n.get('target', '')}")
+                context_parts.append(f"- {doc_id} --[{n.get('relationship', '')}]--> {n.get('id', '')} ({n.get('name', '')})")
                 
     formatted_context = "\n".join(context_parts)
     
     return {
         "query": payload.query,
-        "formatted_context": formatted_context
+        "org_id": payload.org_id,
+        "rag_type": payload.rag_type,
+        "formatted_context": formatted_context,
+        "vector_hits": result["vector_hits"],
+        "graph_context": result["graph_context"],
     }
 
 @app.get("/api/v1/knowledge/entity/{entity_id}/neighbors")

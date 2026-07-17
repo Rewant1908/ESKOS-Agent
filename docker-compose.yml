@@ -177,8 +177,13 @@ services:
     container_name: eskos-content-governance
     ports:
       - "8081:8081"
+    environment:
+      GOVERNANCE_DB_PATH: /data/governance.db
+    volumes:
+      - governance_data:/data
     restart: unless-stopped
 
 volumes:
   qdrant_data:
   postgres_data:
+  governance_data:
