@@ -1,63 +1,65 @@
-# ESKOS — Phase 3: Trust Firewall & Intelligent Ingestion
+# ESKOS Agent System
 
-Reference: `PHASE 3 — TRUST, SECURITY & INTELLIGENT INGESTION` in the ESKOS master document.
-This repo is the first working implementation slice. It targets the shared-knowledge-graph,
-brand-tagged-entity model agreed for Borosil Scientific + Goel Scientific (`org_id` on every
-document/entity — see `common/brand_taxonomy.md`).
+This repository contains the complete implementation of the ESKOS Agent System, spanning from Trust Firewall & Intelligent Ingestion (Phase 3), to the Knowledge Fabric (Phase 4), and Content Governance (Phase 5).
 
-## What's implemented in this slice
+The system targets a shared-knowledge-graph, brand-tagged-entity model agreed for Borosil Scientific + Goel Scientific (`org_id` on every document/entity — see `common/brand_taxonomy.md`).
 
-| Doc Section | Component | Status |
-|---|---|---|
-| §5 Source Classification | `services/trust-score/tiers.py` | done |
-| §6 Identity Verification | `gateway/kong/kong.yml` (mTLS consumer certs) | done |
-| §7 Cloudflare Edge | `services/edge-worker/ja4_pow_worker.js` | done (Worker script) |
-| §8 JA4 Fingerprinting | `services/edge-worker/ja4_pow_worker.js` | done |
-| §9 Dynamic Proof of Work | `services/edge-worker/ja4_pow_worker.js` | done |
-| §10 mTLS | `gateway/envoy/envoy.yaml` | done |
-| §11 API Gateway | `gateway/kong/kong.yml` | done |
-| §12 Streaming | `docker-compose.yml` (Redpanda = Kafka-API compatible) | done |
-| §13 Hygiene Pipeline | `services/hygiene-pipeline/` | done (Python stream consumer; swap for real Flink job later) |
-| §14 Entropy Analysis | `services/hygiene-pipeline/checks/entropy.py` | done |
-| §15 Structural Validation | `services/hygiene-pipeline/checks/structural.py` | done |
-| §16 Semantic Spam Detection | `services/hygiene-pipeline/checks/semantic_spam.py` | stub (heuristic now, SLM later) |
-| §17 Duplicate Detection | `services/hygiene-pipeline/checks/dedup.py` | done (SimHash) |
-| §18 Prompt Injection Detection | `services/hygiene-pipeline/checks/prompt_injection.py` | done |
-| §19 Malware Isolation | not in this slice | TODO — needs Firecracker/gVisor infra, out of scope for a code scaffold |
-| §20 Pre-flight Planning | `services/preflight-planner/app.py` | done |
-| §21 Schema Validation | `services/preflight-planner/schemas/*.json` | done |
-| §22 Real-Time vs Batch | `services/preflight-planner/app.py` (`route_priority`) | done |
-| §23 Trust Scoring | `services/trust-score/app.py` | done |
-| §24 Circuit Breakers | `services/hygiene-pipeline/circuit_breaker.py` | done (in-process; Temporal version noted as TODO) |
-| §25 DLQ | `docker-compose.yml` topics + `services/hygiene-pipeline/dlq.py` | done |
-| §26 Audit Logging | `services/hygiene-pipeline/audit.py` | done (stdout JSON now, ship to your log sink later) |
+## System Components & Phases
 
-## Explicitly NOT done here (needs your call before building)
+### Phase 3: Trust Firewall & Intelligent Ingestion
+The ingestion and hygiene backbone that ensures only safe, structurally sound, and non-spam data enters the system.
+- **Edge Security**: JA4 Fingerprinting & Dynamic Proof of Work (Cloudflare Worker).
+- **API Gateway**: Kong (mTLS, rate-limiting, RBAC).
+- **Hygiene Pipeline**: Entropy Analysis, Structural Validation, Semantic Spam Heuristics, Duplicate Detection (SimHash), and Prompt Injection Detection.
+- **Pre-flight Planner**: Schema validation, token/cost estimation, and RT vs. Batch routing.
+- **Trust Scoring**: 4-tier source classification and weighted scoring.
+- **Streaming & State**: Redpanda (Kafka-compatible) and Redis (circuit breakers, DLQ routing).
 
-- **Temporal.io orchestration** for circuit breakers / real-time-vs-batch scheduling — this
-  scaffold uses in-process logic so you can run and test locally. Swapping to Temporal is a
-  follow-up once you're ready to run this on real infra.
-- **Real Flink cluster** — `services/hygiene-pipeline` is a Python Kafka consumer doing the
-  same checks Flink would. It's functionally equivalent for dev/testing at low volume, not a
-  production-throughput replacement.
-- **Sandbox isolation (§19)** — needs Firecracker/gVisor host-level setup, can't be meaningfully
-  scaffolded as application code.
-- **Local SLM for semantic spam (§16)** — currently a heuristic (keyword-stuffing ratio +
-  off-domain keyword check against your scientific taxonomy). Swap in a quantized classifier
-  when you have labeled training data.
+### Phase 4: Knowledge Fabric
+The cognitive core of the system that structures, links, and serves data to the agents.
+- **Graph Database**: Neo4j for semantic relationships and entity resolution.
+- **Vector Database**: Qdrant for semantic search and multi-RAG storage.
+- **Metadata Registry**: PostgreSQL for provenance and metadata tracking.
+- **Knowledge Fabric Service**: Orchestrates chunking, embeddings, entity extraction, and RAG retrieval.
+
+### Phase 5 & Agents: Content Governance & Agent Runtime
+- **Content Governance**: Enforces OPA policies and ensures compliance across brands.
+- **Agent Runtime**: The execution environment for the autonomous agents, integrating with the Knowledge Fabric to perform complex, multi-step reasoning.
+- **Dashboard**: A React-based user interface (`eskos-dashboard`) for visualizing the knowledge graph, monitoring trust scores, and interacting with the AI agents.
 
 ## Quickstart
 
+### Prerequisites
+- WSL2 (Ubuntu 24.04 recommended)
+- Docker Engine (v23.0+) and Docker Compose v2 (`docker-compose-plugin`)
+- Node.js 20+ (for the dashboard)
+
+### Starting the Backend Infrastructure
+
 ```bash
+# Start all core services (Redpanda, Neo4j, Qdrant, Postgres, Kong, Redis, plus all Python microservices)
 docker compose up -d
+
 # Kong admin:   http://localhost:8001
 # Kong proxy:   http://localhost:8000
-# Redpanda:     localhost:9092
-python services/preflight-planner/app.py   # runs a smoke test document through the pipeline
+# Neo4j:        http://localhost:7474
 ```
 
-## Brand tagging
+### Starting the Dashboard (UI)
+
+```bash
+cd eskos-dashboard
+npm install
+npm run dev
+# Dashboard runs on http://localhost:5173
+```
+
+## Brand Tagging
 
 Every document entering the pipeline requires an `org_id` header/field:
-`borosil-scientific` or `goel-scientific`. See `common/brand_taxonomy.md` for the full
-namespacing rule before this touches the Knowledge Graph in Phase 2.
+`borosil-scientific` or `goel-scientific`. See `common/brand_taxonomy.md` for the full namespacing rules before this touches the Knowledge Graph.
+
+## Note on Production Readiness
+- **Temporal.io orchestration** for circuit breakers / real-time-vs-batch scheduling is currently implemented in-process for local development. Swapping to Temporal is a follow-up once you're ready to run this on real infra.
+- **Real Flink cluster** — `services/hygiene-pipeline` is a Python Kafka consumer doing the same checks Flink would. It's functionally equivalent for dev/testing at low volume, not a production-throughput replacement.
+- **Sandbox isolation (§19)** — needs Firecracker/gVisor host-level setup, out of scope for application scaffold.
