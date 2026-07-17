@@ -1,0 +1,75 @@
+# §10 Mutual TLS — Envoy terminates mTLS before Kong handles routing/authz.
+# Trusted Tier-1 connectors present a client cert issued by the internal CA;
+# Envoy rejects anything without a valid SVID before it ever reaches Kong.
+
+static_resources:
+  listeners:
+    - name: ingest_listener
+      address:
+        socket_address: { address: 0.0.0.0, port_value: 8443 }
+      filter_chains:
+        - transport_socket:
+            name: envoy.transport_sockets.tls
+            typed_config:
+              "@type": type.googleapis.com/envoy.extensions.transport_sockets.tls.v3.DownstreamTlsContext
+              require_client_certificate: true
+              common_tls_context:
+                tls_certificates:
+                  - certificate_chain: { filename: "/etc/envoy/certs/server.crt" }
+                    private_key: { filename: "/etc/envoy/certs/server.key" }
+                validation_context:
+                  trusted_ca: { filename: "/etc/envoy/certs/eskos-internal-ca.crt" }
+                  # Only certs whose SAN matches a registered connector identity pass through.
+                  # Combine with an RBAC filter (below) keyed on the SAN, mapped 1:1 to
+                  # Kong consumers in gateway/kong/kong.yml.
+          filters:
+            - name: envoy.filters.network.http_connection_manager
+              typed_config:
+                "@type": type.googleapis.com/envoy.extensions.filters.network.http_connection_manager.v3.HttpConnectionManager
+                stat_prefix: ingest_http
+                route_config:
+                  name: local_route
+                  virtual_hosts:
+                    - name: kong_backend
+                      domains: ["*"]
+                      routes:
+                        - match: { prefix: "/" }
+                          route: { cluster: kong_cluster }
+                http_filters:
+                  - name: envoy.filters.http.rbac
+                    typed_config:
+                      "@type": type.googleapis.com/envoy.extensions.filters.http.rbac.v3.RBAC
+                      rules:
+                        action: ALLOW
+                        policies:
+                          tier1_connectors:
+                            permissions:
+                              - any: true
+                            principals:
+                              - authenticated:
+                                  principal_name:
+                                    safe_regex:
+                                      regex: ".*\\.(borosil|goel)\\.internal$"
+                              - authenticated:
+                                  principal_name:
+                                    safe_regex:
+                                      regex: "wordpress-webhook\\.eskos\\.internal$"
+                  - name: envoy.filters.http.router
+                    typed_config:
+                      "@type": type.googleapis.com/envoy.extensions.filters.http.router.v3.Router
+
+  clusters:
+    - name: kong_cluster
+      connect_timeout: 2s
+      type: STRICT_DNS
+      load_assignment:
+        cluster_name: kong_cluster
+        endpoints:
+          - lb_endpoints:
+              - endpoint:
+                  address:
+                    socket_address: { address: kong, port_value: 8000 }
+
+admin:
+  address:
+    socket_address: { address: 0.0.0.0, port_value: 9901 }

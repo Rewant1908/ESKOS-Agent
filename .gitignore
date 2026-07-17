@@ -1,0 +1,16 @@
+__pycache__/
+*.pyc
+.env
+.venv/
+venv/
+*.egg-info/
+node_modules/
+.DS_Store
+
+# Certs — never commit real CA certs/keys, only the placeholders in this repo
+*.pem
+*.key
+!gateway/envoy/certs/*.example
+
+# Local docker volumes
+.docker-data/

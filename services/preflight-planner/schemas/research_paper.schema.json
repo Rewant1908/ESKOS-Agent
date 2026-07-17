@@ -1,0 +1,13 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "ResearchPaper",
+  "type": "object",
+  "required": ["title", "authors", "abstract", "org_id"],
+  "properties": {
+    "title": { "type": "string", "minLength": 5 },
+    "authors": { "type": "array", "items": { "type": "string" }, "minItems": 1 },
+    "abstract": { "type": "string", "minLength": 50 },
+    "publication_source": { "type": "string" },
+    "org_id": { "type": "string", "enum": ["borosil-scientific", "goel-scientific", "shared"] }
+  }
+}

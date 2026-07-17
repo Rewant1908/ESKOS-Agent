@@ -1,0 +1,98 @@
+_format_version: "3.0"
+_transform: true
+
+# ── Services ──────────────────────────────────────────────────────────────
+services:
+  - name: knowledge-ingest-service
+    url: http://hygiene-pipeline:8000
+    routes:
+      - name: ingest-route
+        paths:
+          - /api/v1/knowledge/ingest
+        methods: [POST]
+        protocols: [https]
+
+  - name: trust-score-service
+    url: http://trust-score:8080
+    routes:
+      - name: trust-score-route
+        paths:
+          - /api/v1/knowledge/trust-score
+        methods: [GET]
+        protocols: [https]
+
+# ── Consumers: one per connector, mapped to §6 Identity Verification ──────
+# Each represents an ERP/PIM/CMS connector with its own cert identity + scope.
+consumers:
+  - username: borosil-erp-connector
+    tags: [tier-1, org:borosil-scientific]
+    mtls_auth:
+      - subject_name: "erp-connector.borosil.internal"
+
+  - username: goel-erp-connector
+    tags: [tier-1, org:goel-scientific]
+    mtls_auth:
+      - subject_name: "erp-connector.goel.internal"
+
+  - username: shared-wordpress-webhook
+    tags: [tier-1, org:shared]
+    mtls_auth:
+      - subject_name: "wordpress-webhook.eskos.internal"
+
+  - username: public-partner-upload
+    tags: [tier-4, org:unverified]
+    # No mtls_auth — this consumer only reaches ingest via the PoW-gated
+    # public upload path; enforced by the pow-verification plugin below.
+
+# ── Plugins ─────────────────────────────────────────────────────────────
+plugins:
+  # §10 mTLS enforcement on the ingest route for Tier 1 connectors
+  - name: mtls-auth
+    route: ingest-route
+    config:
+      ca_certificates:
+        - eskos-internal-ca
+      skip_consumer_lookup: false
+
+  # §11 Rate limiting — keyed by consumer (cert identity), not IP
+  - name: rate-limiting-advanced
+    route: ingest-route
+    config:
+      limit: [600]
+      window_size: [60]
+      identifier: consumer
+      sync_rate: 10
+      strategy: redis
+      redis:
+        host: redis
+        port: 6379
+
+  # §11 Request size / schema sanity guard before it reaches hygiene pipeline
+  - name: request-size-limiting
+    route: ingest-route
+    config:
+      allowed_payload_size: 50   # MB
+
+  # §26 Audit logging — every request forwarded to a log sink
+  - name: file-log
+    route: ingest-route
+    config:
+      path: /dev/stdout
+      reopen: true
+
+  # Custom plugin (implemented separately, referenced here for completeness):
+  # verifies the JWT issued by the PoW-solve step at the edge worker before
+  # allowing unverified/public consumers through. See services/edge-worker.
+  # - name: pow-verification
+  #   route: ingest-route
+  #   config:
+  #     jwt_ttl_seconds: 90
+  #     applies_to_tags: [tier-4]
+
+ca_certificates:
+  - id: eskos-internal-ca
+    cert: |
+      # Replace with your actual internal CA cert (SPIFFE/SPIRE or self-managed).
+      # -----BEGIN CERTIFICATE-----
+      # ...
+      # -----END CERTIFICATE-----

@@ -1,0 +1,14 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "ProductDatasheet",
+  "type": "object",
+  "required": ["product_name", "material", "dimensions", "applications", "category", "org_id"],
+  "properties": {
+    "product_name": { "type": "string", "minLength": 2 },
+    "material": { "type": "string" },
+    "dimensions": { "type": "string" },
+    "applications": { "type": "array", "items": { "type": "string" }, "minItems": 1 },
+    "category": { "type": "string" },
+    "org_id": { "type": "string", "enum": ["borosil-scientific", "goel-scientific", "shared"] }
+  }
+}

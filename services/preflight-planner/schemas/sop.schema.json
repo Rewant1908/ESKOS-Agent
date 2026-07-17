@@ -1,0 +1,13 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "SOP",
+  "type": "object",
+  "required": ["title", "purpose", "scope", "org_id"],
+  "properties": {
+    "title": { "type": "string" },
+    "purpose": { "type": "string", "minLength": 10 },
+    "scope": { "type": "string" },
+    "responsible_department": { "type": "string" },
+    "org_id": { "type": "string", "enum": ["borosil-scientific", "goel-scientific", "shared"] }
+  }
+}

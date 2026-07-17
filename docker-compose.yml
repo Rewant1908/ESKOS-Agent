@@ -1,0 +1,97 @@
+version: "3.9"
+
+services:
+  # --- Streaming backbone (Redpanda = Kafka-API compatible, single-binary, good for dev) ---
+  redpanda:
+    image: redpandadata/redpanda:v24.1.9
+    container_name: eskos-redpanda
+    command:
+      - redpanda
+      - start
+      - --smp=1
+      - --memory=512M
+      - --overprovisioned
+      - --node-id=0
+      - --check=false
+      - --kafka-addr=PLAINTEXT://0.0.0.0:9092
+      - --advertise-kafka-addr=PLAINTEXT://redpanda:9092
+    ports:
+      - "9092:9092"
+      - "9644:9644"
+
+  # Topic bootstrap — creates all Phase 3 topics on startup
+  redpanda-init-topics:
+    image: redpandadata/redpanda:v24.1.9
+    depends_on:
+      - redpanda
+    entrypoint: /bin/bash
+    command:
+      - -c
+      - |
+        sleep 5;
+        rpk topic create raw-ingest --brokers redpanda:9092 --partitions 6 || true;
+        rpk topic create hygiene-passed --brokers redpanda:9092 --partitions 6 || true;
+        rpk topic create hygiene-quarantine --brokers redpanda:9092 --partitions 3 || true;
+        rpk topic create dlq.schema-violation --brokers redpanda:9092 --partitions 3 || true;
+        rpk topic create dlq.spam-detected --brokers redpanda:9092 --partitions 3 || true;
+        rpk topic create dlq.parse-failed --brokers redpanda:9092 --partitions 3 || true;
+        rpk topic create dlq.prompt-injection --brokers redpanda:9092 --partitions 3 || true;
+        rpk topic create dlq.circuit-broken --brokers redpanda:9092 --partitions 3 || true;
+        rpk topic create knowledge-fabric-ingest --brokers redpanda:9092 --partitions 6 || true;
+
+  # --- Redis: JA4 reputation table, dedup LSH index, circuit breaker state ---
+  redis:
+    image: redis:7-alpine
+    container_name: eskos-redis
+    ports:
+      - "6379:6379"
+
+  # --- Kong API Gateway (declarative / DB-less mode) ---
+  kong:
+    image: kong:3.7
+    container_name: eskos-kong
+    environment:
+      KONG_DATABASE: "off"
+      KONG_DECLARATIVE_CONFIG: /kong/kong.yml
+      KONG_PROXY_ACCESS_LOG: /dev/stdout
+      KONG_ADMIN_ACCESS_LOG: /dev/stdout
+      KONG_PROXY_ERROR_LOG: /dev/stderr
+      KONG_ADMIN_ERROR_LOG: /dev/stderr
+      KONG_ADMIN_LISTEN: "0.0.0.0:8001"
+    volumes:
+      - ./gateway/kong/kong.yml:/kong/kong.yml:ro
+    ports:
+      - "8000:8000"   # proxy
+      - "8001:8001"   # admin API
+
+  # --- Hygiene pipeline (Python stand-in for the Flink job) ---
+  hygiene-pipeline:
+    build: ./services/hygiene-pipeline
+    container_name: eskos-hygiene-pipeline
+    depends_on:
+      - redpanda
+      - redis
+    environment:
+      KAFKA_BROKERS: redpanda:9092
+      REDIS_URL: redis://redis:6379/0
+    restart: unless-stopped
+
+  # --- Pre-flight Planner ---
+  preflight-planner:
+    build: ./services/preflight-planner
+    container_name: eskos-preflight-planner
+    depends_on:
+      - redpanda
+    environment:
+      KAFKA_BROKERS: redpanda:9092
+    restart: unless-stopped
+
+  # --- Trust Score service ---
+  trust-score:
+    build: ./services/trust-score
+    container_name: eskos-trust-score
+    ports:
+      - "8080:8080"
+    environment:
+      REDIS_URL: redis://redis:6379/0
+    restart: unless-stopped
