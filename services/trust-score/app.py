@@ -94,10 +94,51 @@ def trust_score_endpoint():
     return jsonify(compute_trust_score(payload))
 
 
+@app.route("/api/v1/metrics/seo", methods=["POST"])
+def seo_metrics_endpoint():
+    payload = request.get_json(force=True)
+    content = payload.get("content", "")
+    target_keywords = payload.get("keywords", [])
+    
+    if not content or not target_keywords:
+        return jsonify({"error": "content and keywords are required"}), 400
+        
+    content_lower = content.lower()
+    keyword_hits = {}
+    
+    for kw in target_keywords:
+        kw_lower = kw.lower()
+        count = content_lower.count(kw_lower)
+        keyword_hits[kw] = count
+        
+    word_count = len(content.split())
+    if word_count == 0:
+        return jsonify({"seo_score": 0.0, "details": "empty content"})
+        
+    total_keyword_matches = sum(keyword_hits.values())
+    keyword_density = total_keyword_matches / word_count
+    
+    # Ideal keyword density for SEO is roughly 1-3%. 
+    # Let's map density to a 0-100 score. 0.02 is ideal (100).
+    if keyword_density == 0:
+        score = 0.0
+    elif keyword_density <= 0.03:
+        score = (keyword_density / 0.02) * 100
+        score = min(100.0, score)
+    else:
+        # Penalize for keyword stuffing
+        score = max(0.0, 100.0 - ((keyword_density - 0.03) * 1000))
+        
+    return jsonify({
+        "seo_score": round(score, 2),
+        "keyword_density": round(keyword_density, 4),
+        "word_count": word_count,
+        "keyword_hits": keyword_hits
+    })
+
 @app.route("/healthz", methods=["GET"])
 def healthz():
     return jsonify({"status": "ok"})
-
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=8080)

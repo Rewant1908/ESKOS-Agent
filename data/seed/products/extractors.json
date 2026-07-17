@@ -1,0 +1,24 @@
+{
+  "doc_id": "extractors",
+  "org_id": "goel-scientific",
+  "extracted_text": "Title: Extractors\nOverview:\nThe Extractors product line comprises laboratory-grade glass extraction apparatus typically used for solid\u2013liquid or solvent-based extraction. The components include extraction flasks, Soxhlet-like designs, solvent loops, and condensers as required. These extractors are built with borosilicate glass for chemical inertness and durability. They support configurable setups for continuous or batch extraction, with compatibility for various solvents, temperatures, and pressures (within standard glass limits). The modular constructions allow users to assemble, disassemble, or adapt setups per extraction protocol.\n\nKey Features:\nBorosilicate glass construction\nEfficient extraction\nVarious designs available\nChemical resistant\n\nSpecifications:\n\u2022 Material: borosilicate glass 3.3\n\u2022 Compatible components: extraction flask, condenser, solvent loop, sample chamber\n\u2022 Operating temperature: up to ~150\u2013200 \u00b0C (depending on solvent)\n\u2022 Operating pressure: atmospheric or mild vacuum\n\u2022 Volume: lab scale, typically 0.1 L to 10 L or more depending on design\n\u2022 Connection interfaces: standard glass joints (e.g. 24/40, 29/32)\n\u2022 Solvent compatibility: supports common organic and aqueous solvents\n\u2022 Modular design: interchangeable parts, easy cleaning/disassembly\n\nApplications:\n\u2022 Solid\u2013liquid extraction of botanicals, soils, or biomass\n\u2022 Solvent extraction of compound from solids or semi-solids\n\u2022 Analytical extraction for chromatography or spectroscopic analysis\n\u2022 Pilot-scale extraction studies in chemical and pharmaceutical R&D\n\u2022 Method development where multiple cycles or reuse of solvent is needed\nThese extractors enable reproducible extraction operations and simplify scale-down or scale-up studies.\n\n",
+  "document_type": "product_datasheet",
+  "source_category": "official_website",
+  "trust_score": 95.0,
+  "version": "1.0",
+  "metadata": {
+    "product_name": "Extractors",
+    "category": "Laboratory Glassware",
+    "material": "Borosilicate Glass",
+    "industry": "Scientific",
+    "applications": [
+      "Solid\u2013liquid extraction of botanicals, soils, or biomass",
+      "Solvent extraction of compound from solids or semi-solids",
+      "Analytical extraction for chromatography or spectroscopic analysis",
+      "Pilot-scale extraction studies in chemical and pharmaceutical R&D",
+      "Method development where multiple cycles or reuse of solvent is needed",
+      "These extractors enable reproducible extraction operations and simplify scale-down or scale-up studies."
+    ],
+    "url": "https://goelscientific.com/product/extractors/"
+  }
+}

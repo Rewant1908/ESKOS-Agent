@@ -1,0 +1,11 @@
+fastapi==0.115.0
+uvicorn[standard]==0.30.0
+neo4j==5.21.0
+qdrant-client==1.10.1
+psycopg[binary]==3.2.1
+confluent-kafka==2.5.0
+redis==5.0.7
+spacy==3.8.0
+pydantic==2.9.0
+requests==2.32.3
+numpy==1.26.4

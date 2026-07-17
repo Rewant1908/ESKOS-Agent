@@ -1,0 +1,28 @@
+{
+  "doc_id": "coil_condenser",
+  "org_id": "goel-scientific",
+  "extracted_text": "Title: Coil Condenser\nKey Features:\nHigh heat transfer efficiency\nMultiple parallel coil design for increased surface area.\nManufactured with precision bore tubes of various diameters\nVertical mounting for optimized condensate flow\nSuitable for cooling water and brine (closed circuit)\nMaximum coolant pressure: 2.7 bar (g)\nCorrosion-resistant glass construction\nLow maintenance and easy integration with reactors & distillation columns\nDesigned to prevent coil logging and back pressure issues\n\nSpecifications:\nConstruction Shell: Borosilicate Glass\nConstruction Coils: Parallel glass coil battery\nConstruction Mounting Position: Vertical only\nSteam is not recommended for condenser coils\nAdequate flow of coolant should be used\nCoolant should not be heated to the boiling point.\nFlexible hose connection recommended\n\nMethods of Operation:\n\nVapours from Bottom\nEasy installation over reactors\nCondensate returns near condensing temperature\nRisk of coil logging if condensate flow is excessive\nReflux divider recommended below the condenser\n\nVapours from Top\nProvides cooler condensate\nUtilizes full cooling surface area\nRecommended where logging risk is higher\n\nApplications:\nCoil Condensers are widely used in:\nChemical Processing Plants\nPharmaceutical Manufacturing Units\nDistillation Columns\nReflux Systems\nSolvent Recovery Units\nEvaporation Systems\nR&D Pilot Plants\nSpeciality Chemical Production\nFertilizer & Pigment Industries\n\n",
+  "document_type": "product_datasheet",
+  "source_category": "official_website",
+  "trust_score": 95.0,
+  "version": "1.0",
+  "metadata": {
+    "product_name": "Coil Condenser",
+    "category": "Laboratory Glassware",
+    "material": "Borosilicate Glass",
+    "industry": "Scientific",
+    "applications": [
+      "Coil Condensers are widely used in:",
+      "Chemical Processing Plants",
+      "Pharmaceutical Manufacturing Units",
+      "Distillation Columns",
+      "Reflux Systems",
+      "Solvent Recovery Units",
+      "Evaporation Systems",
+      "R&D Pilot Plants",
+      "Speciality Chemical Production",
+      "Fertilizer & Pigment Industries"
+    ],
+    "url": "https://goelscientific.com/product/coil-condenser/"
+  }
+}

@@ -1,0 +1,23 @@
+{
+  "doc_id": "bell_jar",
+  "org_id": "goel-scientific",
+  "extracted_text": "Title: Bell Jar\nOverview:\nThe Bell Jar is a transparent glass dome, usually open at the bottom, used in laboratory settings to enclose objects under vacuum or controlled atmosphere. Made from borosilicate glass, it typically sits over a base or platform and can interface with vacuum connections for low-pressure experiments. Bell jars vary in diameter and height, with ground flanges to ensure a seal with a base plate. They offer simple containment for vacuum demonstrations, atmospheric isolation, or protective covers for sensitive instrumentation.\n\nKey Features:\nBorosilicate glass construction\nVacuum compatible\nClear visibility\nVarious sizes available\n\nSpecifications:\n\u2022 Material: Borosilicate glass for strength and clarity\n\u2022 Diameter and height: wide range (e.g. 100 mm to 500 mm diameters or more)\n\u2022 Flange: ground glass base flange for sealing to base plates\n\u2022 Operating pressure: suitable for modest vacuum, not for high vacuum or high positive pressure\n\u2022 Temperature tolerance: ambient to ~120\u2013150 \u00b0C (depending on design)\n\u2022 Seal method: ground flange with grease or O-ring for vacuum sealing\n\u2022 Custom options: side ports, viewing windows, thicker walls to reduce stress\n\u2022 Use limit: best for low stress vacuum situations; not designed for deep vacuum or high mechanical stress\n\nApplications:\n\u2022 Vacuum experiments and demonstrations (e.g. sound propagation, pressure effects)\n\u2022 Enclosure of sensitive specimens or instruments under inert or controlled gas atmospheres\n\u2022 Protective dome over samples, sensors, or apparatus to isolate from environment\n\u2022 Display or museum jar use (non-vacuum) for inert atmosphere or dust protection\n\u2022 Partial vacuum chamber tasks in teaching labs and low-vac operations\n\n",
+  "document_type": "product_datasheet",
+  "source_category": "official_website",
+  "trust_score": 95.0,
+  "version": "1.0",
+  "metadata": {
+    "product_name": "Bell Jar",
+    "category": "Laboratory Glassware",
+    "material": "Borosilicate Glass",
+    "industry": "Scientific",
+    "applications": [
+      "Vacuum experiments and demonstrations (e.g. sound propagation, pressure effects)",
+      "Enclosure of sensitive specimens or instruments under inert or controlled gas atmospheres",
+      "Protective dome over samples, sensors, or apparatus to isolate from environment",
+      "Display or museum jar use (non-vacuum) for inert atmosphere or dust protection",
+      "Partial vacuum chamber tasks in teaching labs and low-vac operations"
+    ],
+    "url": "https://goelscientific.com/product/bell-jar/"
+  }
+}

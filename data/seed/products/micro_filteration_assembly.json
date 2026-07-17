@@ -1,0 +1,24 @@
+{
+  "doc_id": "micro_filteration_assembly",
+  "org_id": "goel-scientific",
+  "extracted_text": "Title: Micro Filteration Assembly\nOverview:\nThe Micro-Filtration Assembly is a glass-based filtration module designed for very fine particulate separation or clarification tasks. It typically includes a glass housing, membrane or frit support, feed inlet, permeate outlet, retentate line, and sampling ports. The assembly is constructed from borosilicate glass to ensure chemical compatibility and visibility. It supports low-pressure operation and is suitable for small-scale laboratory filtration of colloidal suspensions, fine precipitates, or ultrafine solids where precise control and minimal contamination are essential.\n\nKey Features:\nBorosilicate glass construction\nFine filtration capability\nModular design\nEasy assembly\n\nSpecifications:\n\u2022 Material: borosilicate glass 3.3, PTFE wetted parts\n\u2022 Operating pressure: atmospheric to 0.5\u20131 bar (lab-scale)\n\u2022 Membrane/frit support: glass frit, ceramic, or polymer membrane depending on design\n\u2022 Housing volume: typically small (e.g. < 1 L)\n\u2022 Port interfaces: standard glass joints and ports for feed/permeate/retentate\n\u2022 Flow rates: low volume (mL to few L/h)\n\u2022 Temperature range: ambient to ~120\u2013150 \u00b0C (solvent dependent)\n\u2022 Sealings: PTFE gaskets or compatible seals to ensure leak resistance\n\u2022 Modular layout: removable filter element, easy cleaning, and interchangeability\n\nApplications:\n\u2022 Clarification and fine filtration of reaction broths\n\u2022 Removal of fine particulates or colloids in chemical or biological samples\n\u2022 Pre-treatment before chromatography or analytical operations\n\u2022 Membrane testing or development at the lab scale\n\u2022 Filtration in pharmaceutical, biotech, or specialty chemical R&D\nThis assembly provides controlled, transparent, and modular filtration capability in sensitive lab workflows.\n\n",
+  "document_type": "product_datasheet",
+  "source_category": "official_website",
+  "trust_score": 95.0,
+  "version": "1.0",
+  "metadata": {
+    "product_name": "Micro Filteration Assembly",
+    "category": "Laboratory Glassware",
+    "material": "Borosilicate Glass",
+    "industry": "Scientific",
+    "applications": [
+      "Clarification and fine filtration of reaction broths",
+      "Removal of fine particulates or colloids in chemical or biological samples",
+      "Pre-treatment before chromatography or analytical operations",
+      "Membrane testing or development at the lab scale",
+      "Filtration in pharmaceutical, biotech, or specialty chemical R&D",
+      "This assembly provides controlled, transparent, and modular filtration capability in sensitive lab workflows."
+    ],
+    "url": "https://goelscientific.com/product/micro-filteration-assembly/"
+  }
+}

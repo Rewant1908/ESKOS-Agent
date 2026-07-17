@@ -1,0 +1,14 @@
+{
+  "doc_id": "goel-allihn-condenser-300",
+  "org_id": "goel-scientific",
+  "document_type": "product_datasheet",
+  "source_type": "erp-connector",
+  "extracted_text": "PRODUCT NAME: Allihn Condenser 300mm\n\nSPECIFICATIONS:\n- Jacket Length: 300 mm\n- Bulb count: 5 bulbs for increased surface area\n- Joint Size: 29/32 interchangeable ground glass joints\n- Inner core: Series of bulbs to maximize vapor-cooling surface area and reflux rate\n\nMATERIAL:\n- Manufactured from Borosilicate Glass 3.3 conforming to ASTM E438 Class A standard.\n- High thermal shock resistance (120°C limit).\n\nDIMENSIONS:\n- Overall length: approximately 460 mm\n- Bulb diameter: maximum 35 mm\n\nAPPLICATIONS:\n- Optimized for reflux distillation systems.\n- Ideal for Soxhlet extraction processes.\n- Suitable for chemical laboratory solvent recovery.",
+  "metadata": {
+    "product_name": "Allihn Condenser 300mm",
+    "material": "Borosilicate Glass 3.3",
+    "dimensions": "Jacket: 300mm, Joints: 29/32",
+    "applications": ["reflux", "extraction", "solvent recovery"],
+    "category": "condensers"
+  }
+}

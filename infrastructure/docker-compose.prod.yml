@@ -1,0 +1,34 @@
+version: "3.9"
+
+services:
+  kong:
+    image: kong:3.7
+    environment:
+      KONG_DATABASE: "off"
+      KONG_DECLARATIVE_CONFIG: /kong/kong.yml
+    ports:
+      - "80:8000"
+    restart: always
+
+  knowledge-fabric:
+    image: eskosacr.azurecr.io/knowledge-fabric:latest
+    environment:
+      POSTGRES_HOST: ${AZURE_POSTGRES_HOST}
+      POSTGRES_USER: ${AZURE_POSTGRES_USER}
+      POSTGRES_PASSWORD: ${AZURE_POSTGRES_PASSWORD}
+      POSTGRES_DB: eskos_knowledge
+      QDRANT_HOST: ${AZURE_QDRANT_HOST}
+      NEO4J_URI: ${AZURE_NEO4J_URI}
+      GEMINI_API_KEY: ${GEMINI_API_KEY}
+    restart: always
+
+  agent-runtime:
+    image: eskosacr.azurecr.io/agent-runtime:latest
+    environment:
+      GEMINI_API_KEY: ${GEMINI_API_KEY}
+      FABRIC_URL: "http://knowledge-fabric:8090/api/v1/knowledge/context"
+    restart: always
+
+  content-governance:
+    image: eskosacr.azurecr.io/content-governance:latest
+    restart: always

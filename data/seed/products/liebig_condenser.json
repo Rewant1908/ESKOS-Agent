@@ -1,0 +1,14 @@
+{
+  "doc_id": "goel-liebig-condenser-250",
+  "org_id": "goel-scientific",
+  "document_type": "product_datasheet",
+  "source_type": "erp-connector",
+  "extracted_text": "PRODUCT NAME: Liebig Condenser 250mm\n\nSPECIFICATIONS:\n- Jacket Length: 250 mm\n- Joint Size: 24/29 interchangeable ground glass joints\n- Outer Jacket Connection: Glass serrated tubulations for cooling water hose\n- Core: Straight inner tube through which distillate flows\n\nMATERIAL:\n- Manufactured exclusively from high-quality Borosilicate Glass 3.3 conforming to ISO 3585.\n- Chemical resistance Class S1/A1 to ensure maximum performance under thermal stress.\n\nDIMENSIONS:\n- Overall length: approximately 400 mm\n- Tube diameter: outer jacket 28 mm, inner tube 14 mm\n\nAPPLICATIONS:\n- Designed for laboratory distillation systems.\n- Ideal for organic synthesis reflux experiments.\n- Used as standard laboratory glassware apparatus.",
+  "metadata": {
+    "product_name": "Liebig Condenser 250mm",
+    "material": "Borosilicate Glass 3.3",
+    "dimensions": "Jacket: 250mm, Joints: 24/29",
+    "applications": ["distillation", "reflux", "organic synthesis"],
+    "category": "condensers"
+  }
+}
