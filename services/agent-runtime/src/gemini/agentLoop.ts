@@ -112,9 +112,38 @@ export async function runAgentChat(userMessage: string, ctx: ToolContext, sessio
   const history = getSessionHistory(sessionId);
   const chat = model.startChat({ history });
 
+  let modelName = GEMINI_MODEL;
+  let currentModel = model;
+  let currentChat = chat;
+
+  const sendMessageWithFailover = async (msg: any) => {
+    try {
+      return await currentChat.sendMessage(msg);
+    } catch (err: any) {
+      console.warn(`[agentLoop] sendMessage failed on ${modelName}:`, err);
+      if (modelName !== "gemini-3.1-flash-lite") {
+        addTrace("compliance", "Model Failover", `Request failed on ${modelName} (${err.message || err}). Gracefully falling back to gemini-3.1-flash-lite.`);
+        modelName = "gemini-3.1-flash-lite";
+        const newModel = getClient().getGenerativeModel({
+          model: modelName,
+          systemInstruction: finalSystemInstruction,
+          tools: [{ functionDeclarations: TOOL_DECLARATIONS }] as any,
+        });
+        
+        // Grab current history to restore session state
+        const currentHistory = await currentChat.getHistory();
+        currentModel = newModel;
+        currentChat = newModel.startChat({ history: currentHistory });
+        return await currentChat.sendMessage(msg);
+      } else {
+        throw err;
+      }
+    }
+  };
+
   addTrace("researcher", "Delegated Sub-Query", `Initiating search iteration for query: "${userMessage}"`);
 
-  let response = await chat.sendMessage(userMessage);
+  let response = await sendMessageWithFailover(userMessage);
   const toolCallsMade: { name: string; args: Record<string, any> }[] = [];
   let droppedContextChunks = 0;
 
@@ -150,10 +179,10 @@ export async function runAgentChat(userMessage: string, ctx: ToolContext, sessio
       });
     }
 
-    response = await chat.sendMessage(toolResponses as any);
+    response = await sendMessageWithFailover(toolResponses as any);
   }
 
-  saveSessionHistory(sessionId, await chat.getHistory());
+  saveSessionHistory(sessionId, await currentChat.getHistory());
 
   const replyText = response.response.text();
 
