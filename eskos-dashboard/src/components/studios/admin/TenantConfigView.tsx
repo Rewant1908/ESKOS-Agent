@@ -27,12 +27,42 @@ export default function TenantConfigView() {
   const [config, setConfig] = useState<TenantConfig>(SEED_CONFIG);
   const [saving, setSaving] = useState(false);
 
+  // Phase E - Enterprise Sync State parameters
+  const [erpProvider, setErpProvider] = useState("none");
+  const [crmProvider, setCrmProvider] = useState("none");
+  const [syncing, setSyncing] = useState(false);
+  const [syncResult, setSyncResult] = useState<any>(null);
+
   const handleSave = () => {
     setSaving(true);
     setTimeout(() => {
       setSaving(false);
       alert("Tenant settings updated successfully inside Registry!");
     }, 1000);
+  };
+
+  const handleVerifySync = async () => {
+    try {
+      setSyncing(true);
+      const res = await fetch("/api/enterprise/sync", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          erp_provider: erpProvider,
+          crm_provider: crmProvider,
+          org_id: config.orgId
+        })
+      });
+      if (!res.ok) throw new Error("Sync connection timeout.");
+      const data = await res.json();
+      setSyncResult(data);
+    } catch (err: any) {
+      alert("Enterprise Sync Error: " + err.message);
+    } finally {
+      setSyncing(false);
+    }
   };
 
   const toggleParam = (key: keyof TenantConfig) => {
@@ -100,7 +130,7 @@ export default function TenantConfigView() {
             </div>
 
             {/* Region / Industry */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 border-b border-border/40 pb-4">
               <div className="space-y-1.5">
                 <label className="block text-[10px] text-muted-foreground uppercase font-bold tracking-wider font-mono">Industry Vertical</label>
                 <input
@@ -124,6 +154,65 @@ export default function TenantConfigView() {
                 </select>
               </div>
             </div>
+
+            {/* ERP / CRM Enterprise Integrations (Phase E) */}
+            <span className="text-[10px] font-bold text-slate-200 uppercase tracking-widest font-mono flex items-center space-x-1.5 pt-2">
+              <Cpu className="w-3.5 h-3.5 text-primary" />
+              <span>Layer 1 Enterprise Systems (Phase E)</span>
+            </span>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <label className="block text-[10px] text-muted-foreground uppercase font-bold tracking-wider font-mono">ERP Provider Connection</label>
+                <select
+                  value={erpProvider}
+                  onChange={(e) => setErpProvider(e.target.value)}
+                  className="w-full bg-background border border-border p-2.5 rounded text-xs text-slate-200 outline-none focus:border-primary font-sans"
+                >
+                  <option value="none">None (Disconnected)</option>
+                  <option value="sap-s4hana">SAP S/4HANA Enterprise Cloud</option>
+                  <option value="ms-dynamics">Microsoft Dynamics 365 Finance</option>
+                </select>
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="block text-[10px] text-muted-foreground uppercase font-bold tracking-wider font-mono">CRM Provider Connection</label>
+                <select
+                  value={crmProvider}
+                  onChange={(e) => setCrmProvider(e.target.value)}
+                  className="w-full bg-background border border-border p-2.5 rounded text-xs text-slate-200 outline-none focus:border-primary font-sans"
+                >
+                  <option value="none">None (Disconnected)</option>
+                  <option value="salesforce">Salesforce Customer 360 Cloud</option>
+                  <option value="hubspot">HubSpot Suite CRM</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="pt-2 flex justify-start items-center space-x-3">
+              <button
+                type="button"
+                onClick={handleVerifySync}
+                disabled={syncing}
+                className="flex items-center space-x-1.5 px-3 py-2 bg-card border border-border hover:bg-muted text-muted-foreground hover:text-foreground text-[10px] uppercase font-bold tracking-wider rounded transition-all cursor-pointer font-sans disabled:opacity-50"
+              >
+                <RefreshCw className={`w-3.5 h-3.5 ${syncing ? "animate-spin" : ""}`} />
+                <span>Verify Enterprise Sync</span>
+              </button>
+            </div>
+
+            {syncResult && (
+              <div className="p-3.5 rounded bg-muted/20 border border-border text-[11px] font-mono text-slate-300 space-y-2">
+                <div className="flex justify-between border-b border-border/40 pb-1.5 text-[9px] uppercase font-bold text-slate-400">
+                  <span>Sync Receipt Verification</span>
+                  <span className="text-emerald-400">Active</span>
+                </div>
+                <div>Sync Time: {new Date(syncResult.timestamp).toLocaleString()}</div>
+                <div>ERP Sync: {syncResult.erp_metrics.provider} ({syncResult.erp_metrics.items_synced} parts synced, latency: {syncResult.erp_metrics.connection_latency})</div>
+                <div>CRM Sync: {syncResult.crm_metrics.provider} ({syncResult.crm_metrics.records_synced} customer records, latency: {syncResult.crm_metrics.connection_latency})</div>
+                <div className="text-[10px] text-slate-500">Security Scope: {syncResult.security_validation.auth_type} (partition: {syncResult.security_validation.data_scope})</div>
+              </div>
+            )}
           </div>
         </div>
 
