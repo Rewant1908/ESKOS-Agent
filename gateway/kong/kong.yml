@@ -157,7 +157,7 @@ services:
             - "http://localhost:3000"
             - "https://*.ngrok-free.app"
             - "https://*.ngrok-free.dev"
-          methods: [POST, OPTIONS]
+          methods: [GET, POST, OPTIONS]
           headers: [Accept, Content-Type, ngrok-skip-browser-warning, x-eskos-org-id]
           credentials: false
           max_age: 3600
@@ -169,6 +169,20 @@ services:
       - name: agent-chat-route
         paths:
           - /api/v1/agent/chat
+        methods: [GET, POST, OPTIONS]
+        protocols: [http, https]
+        strip_path: false
+
+      - name: agent-tools-route
+        paths:
+          - /api/v1/agent/tools
+        methods: [GET, POST, OPTIONS]
+        protocols: [http, https]
+        strip_path: false
+
+      - name: agent-prompts-route
+        paths:
+          - /api/v1/agent/prompts
         methods: [GET, POST, OPTIONS]
         protocols: [http, https]
         strip_path: false
