@@ -29,12 +29,28 @@ const STUDIOS: StudioCard[] = [
   { id: "admin", name: "Administration Studio", desc: "Configure global tenant scopes, cryptographically secure API keys, and access controls.", icon: Settings2, href: "/admin/tenant-config", color: "from-slate-500 to-zinc-500", modulesCount: 2 }
 ];
 
+interface HomeStats {
+  postgres: {
+    total_documents: number;
+    total_chunks: number;
+  };
+  neo4j: {
+    total_nodes: number;
+    total_relations: number;
+  };
+  qdrant: {
+    total_vectors: number;
+  };
+}
+
 export default function HomeView() {
   const [chatInput, setChatInput] = useState("");
   const [chatLog, setChatLog] = useState<Array<{ sender: "user" | "ai"; text: string }>>([
     { sender: "ai", text: "Welcome to the Scientific Operating System. Ask me anything about the Goel Scientific database or active agents." }
   ]);
   const [currentUser, setCurrentUser] = useState<any>(null);
+  const [stats, setStats] = useState<HomeStats | null>(null);
+  const [statsLoading, setStatsLoading] = useState(true);
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -47,6 +63,27 @@ export default function HomeView() {
         }
       }
     }
+
+    const fetchHomeStats = async () => {
+      const KONG_URL = process.env.NEXT_PUBLIC_KONG_URL || "http://localhost:8000";
+      try {
+        const res = await fetch(`${KONG_URL}/api/v1/knowledge/stats`, {
+          headers: {
+            "ngrok-skip-browser-warning": "true"
+          }
+        });
+        if (res.ok) {
+          const data = await res.json();
+          setStats(data);
+        }
+      } catch (err) {
+        console.error("Failed to fetch home telemetry stats:", err);
+      } finally {
+        setStatsLoading(false);
+      }
+    };
+
+    fetchHomeStats();
   }, []);
 
   const visibleStudios = STUDIOS.filter((studio) => {
@@ -95,24 +132,30 @@ export default function HomeView() {
           <div className="bg-card/40 border border-border/80 px-4 py-3 rounded-xl flex items-center space-x-3 backdrop-blur-sm">
             <Server className="w-5 h-5 text-primary" />
             <div>
-              <span className="text-[9px] text-muted-foreground block uppercase font-bold tracking-wider">Gateway State</span>
-              <span className="text-slate-200 font-bold block mt-0.5">goel-scientific</span>
+              <span className="text-[9px] text-muted-foreground block uppercase font-bold tracking-wider">Gateway Context</span>
+              <span className="text-slate-200 font-bold block mt-0.5 uppercase">
+                {currentUser?.tenant || "goel-scientific"}
+              </span>
             </div>
           </div>
 
           <div className="bg-card/40 border border-border/80 px-4 py-3 rounded-xl flex items-center space-x-3 backdrop-blur-sm">
             <Landmark className="w-5 h-5 text-emerald-400" />
             <div>
-              <span className="text-[9px] text-muted-foreground block uppercase font-bold tracking-wider">Net Savings</span>
-              <span className="text-emerald-400 font-bold block mt-0.5">$394,200</span>
+              <span className="text-[9px] text-muted-foreground block uppercase font-bold tracking-wider">Ingested Docs</span>
+              <span className="text-emerald-400 font-bold block mt-0.5">
+                {statsLoading ? "Querying..." : (stats?.postgres?.total_documents ?? 0).toLocaleString()}
+              </span>
             </div>
           </div>
 
           <div className="bg-card/40 border border-border/80 px-4 py-3 rounded-xl flex items-center space-x-3 backdrop-blur-sm shadow-[0_0_15px_rgba(79,70,229,0.12)]">
             <Atom className="w-5 h-5 text-primary animate-[spin_4s_linear_infinite]" />
             <div>
-              <span className="text-[9px] text-muted-foreground block uppercase font-bold tracking-wider">Build Stage</span>
-              <span className="text-primary font-bold block mt-0.5">59.1% Active</span>
+              <span className="text-[9px] text-muted-foreground block uppercase font-bold tracking-wider">Graph Relations</span>
+              <span className="text-primary font-bold block mt-0.5">
+                {statsLoading ? "Querying..." : (stats?.neo4j?.total_relations ?? 0).toLocaleString()}
+              </span>
             </div>
           </div>
         </div>

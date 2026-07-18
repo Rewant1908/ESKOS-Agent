@@ -48,11 +48,8 @@ interface PageProps {
 const SIMULATED_MODULES = [
   "agent/planner",
   "agent/workflows",
-  "agent/monitoring",
-  "agent/cost-analytics",
   "governance/provenance",
   "governance/citations",
-  "governance/compliance",
   "knowledge/embeddings",
   "knowledge/version-control",
   "marketing/geo",
