@@ -12,12 +12,22 @@ import time
 from datetime import datetime, timezone
 
 from flask import Flask, jsonify, request
+import os
+import json
+import redis
 
-from tiers import base_trust, tier
+from tiers import base_trust, tier, SOURCE_TRUST_TABLE
 
 app = Flask(__name__)
 
-WEIGHTS = {
+REDIS_URL = os.environ.get("REDIS_URL", "redis://redis:6379/0")
+try:
+    r_client = redis.from_url(REDIS_URL)
+except Exception as e:
+    print(f"[trust-score] Redis connection failed: {e}", flush=True)
+    r_client = None
+
+DEFAULT_WEIGHTS = {
     "source_authority": 0.30,
     "freshness": 0.15,
     "scientific_references": 0.10,
@@ -27,6 +37,41 @@ WEIGHTS = {
     "version_validity": 0.05,
     "enterprise_ownership": 0.05,
 }
+
+def get_weights() -> dict:
+    if r_client:
+        try:
+            cached = r_client.get("trust_score:weights")
+            if cached:
+                return json.loads(cached)
+        except Exception as e:
+            print(f"[trust-score] Redis get_weights error: {e}", flush=True)
+    return DEFAULT_WEIGHTS
+
+def set_weights(weights: dict) -> None:
+    if r_client:
+        try:
+            r_client.set("trust_score:weights", json.dumps(weights))
+        except Exception as e:
+            print(f"[trust-score] Redis set_weights error: {e}", flush=True)
+
+def get_source_trust_table() -> dict:
+    if r_client:
+        try:
+            cached = r_client.get("trust_score:source_trust")
+            if cached:
+                return json.loads(cached)
+        except Exception as e:
+            print(f"[trust-score] Redis get_source_trust error: {e}", flush=True)
+    return SOURCE_TRUST_TABLE
+
+def set_source_trust_table(table: dict) -> None:
+    if r_client:
+        try:
+            r_client.set("trust_score:source_trust", json.dumps(table))
+        except Exception as e:
+            print(f"[trust-score] Redis set_source_trust error: {e}", flush=True)
+
 
 
 def freshness_score(document_date_iso: str | None, max_age_days: int = 730) -> float:
@@ -60,8 +105,12 @@ def compute_trust_score(payload: dict) -> dict:
     is_version_conflict = payload.get("is_version_conflict", False)
     is_enterprise_owned = payload.get("is_enterprise_owned", org_id != "shared" or source_category.startswith("internal"))
 
+    source_table = get_source_trust_table()
+    source_authority = source_table.get(source_category, 20)
+    weights = get_weights()
+
     components = {
-        "source_authority": base_trust(source_category) / 100,
+        "source_authority": source_authority / 100,
         "freshness": freshness_score(document_date),
         "scientific_references": min(1.0, reference_count / 5),
         "reviewer_approval": 1.0 if reviewer_approved else 0.3,
@@ -71,7 +120,7 @@ def compute_trust_score(payload: dict) -> dict:
         "enterprise_ownership": 1.0 if is_enterprise_owned else 0.5,
     }
 
-    weighted_score = sum(components[k] * WEIGHTS[k] for k in WEIGHTS)
+    weighted_score = sum(components[k] * weights[k] for k in weights)
     final_score = round(weighted_score * 100, 2)
 
     return {
@@ -92,6 +141,28 @@ def trust_score_endpoint():
     if "source_category" not in payload:
         return jsonify({"error": "source_category is required"}), 400
     return jsonify(compute_trust_score(payload))
+
+
+@app.route("/api/v1/knowledge/trust-score/config", methods=["GET", "POST"])
+def trust_score_config_endpoint():
+    if request.method == "GET":
+        return jsonify({
+            "weights": get_weights(),
+            "source_trust": get_source_trust_table()
+        })
+    else:
+        payload = request.get_json(force=True)
+        if "weights" in payload:
+            weights = payload["weights"]
+            total = sum(weights.values())
+            # Guard against invalid weight distributions
+            if abs(total - 1.0) > 0.01:
+                return jsonify({"error": f"Weight configuration must sum to exactly 1.0, got {total:.2f}"}), 400
+            set_weights(weights)
+        if "source_trust" in payload:
+            set_source_trust_table(payload["source_trust"])
+        return jsonify({"status": "success", "message": "Trust configuration updated."})
+
 
 
 @app.route("/api/v1/metrics/seo", methods=["POST"])

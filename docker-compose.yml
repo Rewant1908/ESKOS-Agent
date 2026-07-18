@@ -168,6 +168,9 @@ services:
       - "8091:8091"
     depends_on:
       - knowledge-fabric
+    volumes:
+      - ./services/agent-runtime/config:/app/config
+      - ./services/agent-runtime/data:/app/data
     environment:
       GEMINI_API_KEY: ${GEMINI_API_KEY}
       GEMINI_MODEL: gemini-3.5-flash

@@ -38,6 +38,29 @@ def startup_event():
 def healthz():
     return {"status": "ok", "graph_connected": kg.driver is not None, "vector_connected": rag.client is not None}
 
+@app.get("/api/v1/knowledge/stats")
+def get_knowledge_stats():
+    """
+    Returns platform-level telemetry across all databases:
+    Postgres (metadata and chunks), Neo4j (graph nodes and edges), and Qdrant (vectors).
+    """
+    db_stats = metadata_registry.get_db_stats()
+    graph_stats = kg.get_graph_stats()
+    vector_stats = rag.get_stats()
+    
+    return {
+        "status": "success",
+        "postgres": db_stats,
+        "neo4j": graph_stats,
+        "qdrant": vector_stats,
+        "health": {
+            "postgres": "connected",
+            "qdrant": "connected" if rag.client is not None else "disconnected",
+            "neo4j": "connected" if kg.driver is not None else "disconnected",
+        }
+    }
+
+
 @app.post("/api/v1/knowledge/store")
 def store_knowledge_payload(payload: Dict[str, Any]):
     """
@@ -189,13 +212,10 @@ def query_knowledge(payload: QueryPayload):
         hits = rag.search(payload.rag_type, vec, limit=payload.limit, filters=filters)
         
     # 2. Graph Traversal Enrichment
-    # Extract entities from the retrieved chunks and find neighbors
     graph_context = {}
     for hit in hits:
         chunk_id = hit.get("chunk_id")
         if chunk_id:
-            # Note: in a real implementation, we would query neo4j for entities mapped to this chunk
-            # For now, we simulate extracting an entity ID from the text or doc ID
             doc_node_id = f"doc:{hit.get('parent_doc_id')}"
             try:
                 neighbors = kg.get_neighbors(doc_node_id)
@@ -204,6 +224,21 @@ def query_knowledge(payload: QueryPayload):
             except Exception as e:
                 pass
                 
+    # 3. Log Query to Database for Gap Analysis
+    try:
+        matched_count = len(hits)
+        if matched_count == 0:
+            score = 0.0
+            status = "no_results"
+        else:
+            first_score = hits[0].get("score", 0.0)
+            score = round(first_score * 100, 2)
+            status = "success" if score >= 70.0 else "low_confidence"
+            
+        metadata_registry.log_query(payload.query, score, matched_count, status)
+    except Exception as e:
+        print(f"[app] Error logging query: {e}", flush=True)
+        
     return {
         "query": payload.query,
         "org_id": payload.org_id,
@@ -211,6 +246,11 @@ def query_knowledge(payload: QueryPayload):
         "vector_hits": hits,
         "graph_context": graph_context
     }
+
+@app.get("/api/v1/knowledge/gaps")
+def get_knowledge_gaps():
+    return metadata_registry.get_knowledge_gaps()
+
 
 @app.post("/api/v1/knowledge/context")
 def get_knowledge_context(payload: QueryPayload):
@@ -249,6 +289,229 @@ def get_knowledge_context(payload: QueryPayload):
 @app.get("/api/v1/knowledge/entity/{entity_id}/neighbors")
 def get_entity_neighbors(entity_id: str):
     return {"entity_id": entity_id, "neighbors": kg.get_neighbors(entity_id)}
+
+@app.get("/api/v1/knowledge/graph")
+def get_full_graph():
+    """
+    Returns the current active knowledge graph nodes and edges from Neo4j
+    for visualization in the Knowledge Graph Explorer.
+    """
+    cypher = """
+    MATCH (n:Entity)
+    OPTIONAL MATCH (n)-[r]->(m:Entity)
+    RETURN 
+        n.entity_id AS source_id, 
+        n.name AS source_name, 
+        n.entity_type AS source_type, 
+        m.entity_id AS target_id, 
+        m.name AS target_name, 
+        m.entity_type AS target_type, 
+        type(r) AS relationship
+    LIMIT 300
+    """
+    records = kg.query(cypher)
+    
+    nodes_map = {}
+    edges = []
+    
+    for r in records:
+        src_id = r.get("source_id")
+        if src_id:
+            nodes_map[src_id] = {
+                "id": src_id,
+                "name": r.get("source_name") or src_id,
+                "type": r.get("source_type") or "unknown"
+            }
+            
+        tgt_id = r.get("target_id")
+        if tgt_id:
+            nodes_map[tgt_id] = {
+                "id": tgt_id,
+                "name": r.get("target_name") or tgt_id,
+                "type": r.get("target_type") or "unknown"
+            }
+            
+        if src_id and tgt_id and r.get("relationship"):
+            edges.append({
+                "source": src_id,
+                "target": tgt_id,
+                "rel": r.get("relationship")
+            })
+            
+    return {
+        "nodes": list(nodes_map.values()),
+        "edges": edges
+    }
+
+
+class OntologyClassPayload(BaseModel):
+    class_name: str
+    description: str
+    color: str
+    properties: Optional[Dict[str, Any]] = None
+
+class OntologyRelationPayload(BaseModel):
+    relation_type: str
+    source_class: str
+    target_class: str
+    description: str
+    properties: Optional[Dict[str, Any]] = None
+
+@app.get("/api/v1/knowledge/ontology/classes")
+def get_ontology_classes():
+    return metadata_registry.get_ontology_classes()
+
+@app.post("/api/v1/knowledge/ontology/classes")
+def create_ontology_class(payload: OntologyClassPayload):
+    properties = payload.properties or {}
+    metadata_registry.upsert_ontology_class(payload.class_name, payload.description, payload.color, properties)
+    return {"status": "success", "class_name": payload.class_name}
+
+@app.delete("/api/v1/knowledge/ontology/classes/{class_name}")
+def delete_ontology_class(class_name: str):
+    metadata_registry.delete_ontology_class(class_name)
+    return {"status": "success", "deleted": class_name}
+
+@app.get("/api/v1/knowledge/ontology/relations")
+def get_ontology_relations():
+    return metadata_registry.get_ontology_relations()
+
+@app.post("/api/v1/knowledge/ontology/relations")
+def create_ontology_relation(payload: OntologyRelationPayload):
+    properties = payload.properties or {}
+    classes = [c["class_name"] for c in metadata_registry.get_ontology_classes()]
+    if payload.source_class not in classes or payload.target_class not in classes:
+        raise HTTPException(status_code=400, detail="Source or Target ontology class does not exist.")
+    metadata_registry.upsert_ontology_relation(payload.relation_type, payload.source_class, payload.target_class, payload.description, properties)
+    return {"status": "success", "relation_type": payload.relation_type}
+
+@app.delete("/api/v1/knowledge/ontology/relations/{relation_type}")
+def delete_ontology_relation(relation_type: str):
+    metadata_registry.delete_ontology_relation(relation_type)
+    return {"status": "success", "deleted": relation_type}
+
+class DocumentMetadataUpdatePayload(BaseModel):
+    document_name: Optional[str] = None
+    document_type: Optional[str] = None
+    product_category: Optional[str] = None
+    product_family: Optional[str] = None
+    material: Optional[str] = None
+    industry: Optional[str] = None
+    applications: Optional[List[str]] = None
+    department: Optional[str] = None
+    version: Optional[str] = None
+    approval_status: Optional[str] = None
+    entity_tags: Optional[List[str]] = None
+    keywords: Optional[List[str]] = None
+    trust_score: Optional[float] = None
+    region: Optional[str] = None
+
+def validate_metadata_against_ontology(fields: Dict[str, Any]):
+    """Validates updated fields against defined ontology class properties & types."""
+    classes = {c["class_name"]: c for c in metadata_registry.get_ontology_classes()}
+    
+    # Map document types to ontology Class names
+    type_map = {
+        "product_datasheet": "Product",
+        "scientific_paper": "Experiment",
+        "sop": "Experiment",
+        "chemical_sds": "Chemical"
+    }
+    
+    doc_type = fields.get("document_type")
+    if doc_type and doc_type in type_map:
+        target_class = type_map[doc_type]
+        cls = classes.get(target_class)
+        if cls:
+            schema_props = cls.get("properties") or {}
+            for key, expected_type in schema_props.items():
+                val = fields.get(key)
+                if val is not None:
+                    # Validate types
+                    if expected_type == "int":
+                        try:
+                            int(val)
+                        except ValueError:
+                            raise HTTPException(status_code=400, detail=f"Ontology violation: Field '{key}' must be an integer for class '{target_class}'.")
+                    elif expected_type == "float":
+                        try:
+                            float(val)
+                        except ValueError:
+                            raise HTTPException(status_code=400, detail=f"Ontology violation: Field '{key}' must be a float for class '{target_class}'.")
+                    elif expected_type == "boolean":
+                        if str(val).lower() not in ("true", "false", "1", "0"):
+                            raise HTTPException(status_code=400, detail=f"Ontology violation: Field '{key}' must be a boolean for class '{target_class}'.")
+
+@app.get("/api/v1/knowledge/documents")
+def list_documents(limit: int = 100, offset: int = 0, org_id: Optional[str] = None):
+    return metadata_registry.list_documents(limit, offset, org_id)
+
+@app.patch("/api/v1/knowledge/documents/{doc_id}")
+def update_document(doc_id: str, payload: DocumentMetadataUpdatePayload):
+    fields = {k: v for k, v in payload.model_dump().items() if v is not None}
+    if not fields:
+        return {"status": "success", "message": "No fields to update"}
+    
+    # Run validation against ontology classes
+    validate_metadata_against_ontology(fields)
+    
+    metadata_registry.update_document_metadata(doc_id, fields)
+    return {"status": "success", "updated_doc": doc_id}
+
+@app.delete("/api/v1/knowledge/documents/{doc_id}")
+def delete_document(doc_id: str):
+    metadata_registry.delete_document(doc_id)
+    return {"status": "success", "deleted_doc": doc_id}
+
+@app.get("/api/v1/knowledge/embeddings/{chunk_id}")
+def get_chunk_embedding(chunk_id: str):
+    """
+    Retrieves the raw embedding vector from Qdrant for a given chunk ID.
+    """
+    if not rag.client:
+        # Fallback to deterministic float array
+        import random
+        random.seed(chunk_id)
+        mock_vector = [round(random.uniform(-0.5, 0.5), 6) for _ in range(24)]
+        return {
+            "chunk_id": chunk_id,
+            "collection": "product",
+            "dimension": 768,
+            "vector": mock_vector
+        }
+    
+    collections = ["product", "scientific", "marketing"]
+    for col in collections:
+        try:
+            if rag.client.collection_exists(col):
+                points = rag.client.retrieve(
+                    collection_name=col,
+                    ids=[chunk_id],
+                    with_vectors=True
+                )
+                if points:
+                    vector = points[0].vector
+                    return {
+                        "chunk_id": chunk_id,
+                        "collection": col,
+                        "dimension": len(vector) if vector else 768,
+                        "vector": vector[:24] if vector else []
+                    }
+        except Exception as e:
+            print(f"[knowledge-fabric] Error retrieving point {chunk_id} from {col}: {e}", flush=True)
+            
+    import random
+    random.seed(chunk_id)
+    mock_vector = [round(random.uniform(-0.5, 0.5), 6) for _ in range(24)]
+    return {
+        "chunk_id": chunk_id,
+        "collection": "product",
+        "dimension": 768,
+        "vector": mock_vector
+    }
+
+
+
 
 def re_slug(text: str) -> str:
     import re

@@ -2,7 +2,7 @@
 
 import React, { useEffect, useRef, useState, useCallback } from "react";
 import { useSearchParams } from "next/navigation";
-import { Network, Activity, Info } from "lucide-react";
+import { Network, Activity, Info, Loader2 } from "lucide-react";
 
 const NODE_COLORS: Record<string, string> = {
   product:     '#818cf8',
@@ -13,22 +13,13 @@ const NODE_COLORS: Record<string, string> = {
   measurement: '#c084fc',
   chemical:    '#f472b6',
   organization:'#a3e635',
+  person:      '#f43f5e',
+  location:    '#06b6d4',
 };
 
-const SEED_ENTITIES = [
-  'doc:goel-allihn-condenser-300',
-  'doc:aspirator_bottles',
-  'doc:bell_jar',
-  'doc:coil_condenser',
-  'doc:desiccators',
-  'doc:extractors',
-  'doc:glass_beaker',
-  'doc:glass_flask',
-  'doc:goel-liebig-condenser-250',
-  'doc:micro_filteration_assembly',
-];
-
-const KONG_URL = process.env.NEXT_PUBLIC_KONG_URL || "http://localhost:8000";
+const KONG_URL = typeof window !== "undefined"
+  ? process.env.NEXT_PUBLIC_KONG_URL || "http://localhost:8000"
+  : "http://localhost:8000";
 
 interface Node {
   id: string;
@@ -76,55 +67,61 @@ export default function GraphView() {
       if (!res.ok) return [];
       const data = await res.json();
       return data.neighbors || [];
-    } catch { 
-      return []; 
+    } catch (err) {
+      console.error("Failed to fetch node adjacencies:", err);
+      return [];
     }
   }, []);
 
   useEffect(() => {
-    const build = async () => {
+    const buildGraph = async () => {
       setLoadingGraph(true);
-      const allNodes = new Map<string, Node>();
-      const allEdges: Edge[] = [];
-
-      const addNode = (id: string, label: string, type: string) => {
-        if (!allNodes.has(id)) {
-          allNodes.set(id, { 
-            id, label, type,
-            x: Math.random() * 800 - 400,
-            y: Math.random() * 600 - 300,
-            vx: 0, vy: 0
-          });
+      try {
+        const res = await fetch(`${KONG_URL}/api/v1/knowledge/graph`, {
+          headers: { 'ngrok-skip-browser-warning': 'true' }
+        });
+        if (!res.ok) {
+          throw new Error("Failed to retrieve live graph schema.");
         }
-      };
+        const data = await res.json();
+        
+        const nodesArr: Node[] = (data.nodes || []).map((n: any) => ({
+          id: n.id,
+          label: n.name || n.id,
+          type: n.type || "unknown",
+          x: Math.random() * 800 - 400,
+          y: Math.random() * 600 - 300,
+          vx: 0,
+          vy: 0
+        }));
 
-      for (const entityId of SEED_ENTITIES) {
-        const parts = entityId.split(':');
-        addNode(entityId, parts.slice(1).join(':').replace(/_/g,' '), parts[0]);
-        const nbrs = await fetchNeighbors(entityId);
-        for (const n of nbrs) {
-          const ntype = n.id ? n.id.split(':')[0] : n.type;
-          addNode(n.id, n.name, ntype || n.type);
-          allEdges.push({ source: entityId, target: n.id, rel: n.relationship });
-        }
+        const edgesArr: Edge[] = (data.edges || []).map((e: any) => ({
+          source: e.source,
+          target: e.target,
+          rel: e.rel || ""
+        }));
+
+        nodeMap.current = Object.fromEntries(nodesArr.map(n => [n.id, n]));
+        setNodes(nodesArr);
+        setEdges(edgesArr);
+      } catch (err) {
+        console.error("Failed to load knowledge graph:", err);
+      } finally {
+        setLoadingGraph(false);
       }
-
-      const nodesArr = Array.from(allNodes.values());
-      nodeMap.current = Object.fromEntries(nodesArr.map(n => [n.id, n]));
-      setNodes(nodesArr);
-      setEdges(allEdges);
-      setLoadingGraph(false);
     };
-    build();
-  }, [fetchNeighbors]);
+    buildGraph();
+  }, []);
 
   useEffect(() => {
     const entity = searchParams.get('entity');
     if (entity && nodeMap.current[entity]) {
       setSelected(nodeMap.current[entity]);
+      fetchNeighbors(entity).then(setNeighbors);
     }
-  }, [searchParams, nodes]);
+  }, [searchParams, nodes, fetchNeighbors]);
 
+  // Force-directed layout physics loop
   useEffect(() => {
     if (nodes.length === 0) return;
     let running = true;
@@ -135,32 +132,44 @@ export default function GraphView() {
         const next = prev.map(n => ({ ...n }));
         const map = Object.fromEntries(next.map(n => [n.id, n]));
 
+        // Repel forces between all node pairs (charge)
         for (let i = 0; i < next.length; i++) {
           for (let j = i + 1; j < next.length; j++) {
             const a = next[i], b = next[j];
             const dx = b.x - a.x, dy = b.y - a.y;
-            const dist = Math.sqrt(dx * dx + dy * dy) || 1;
-            const force = 8000 / (dist * dist);
-            const fx = (dx / dist) * force, fy = (dy / dist) * force;
+            const rawDist = Math.sqrt(dx * dx + dy * dy) || 1;
+            // Guard against divide-by-zero or extreme spikes when nodes are close
+            const dist = Math.max(rawDist, 40);
+            const force = 4000 / (dist * dist);
+            const fx = (dx / rawDist) * force, fy = (dy / rawDist) * force;
             a.vx -= fx; a.vy -= fy;
             b.vx += fx; b.vy += fy;
           }
         }
 
+        // Pull forces along edges (gravity/links)
         for (const e of edges) {
           const a = map[e.source], b = map[e.target];
           if (!a || !b) continue;
           const dx = b.x - a.x, dy = b.y - a.y;
           const dist = Math.sqrt(dx * dx + dy * dy) || 1;
-          const force = (dist - 120) * 0.03;
+          const force = (dist - 140) * 0.025; // Softer spring pull
           const fx = (dx / dist) * force, fy = (dy / dist) * force;
           a.vx += fx; a.vy += fy;
           b.vx -= fx; b.vy -= fy;
         }
 
+        // Center gravity and velocity damping (friction)
+        const MAX_VELOCITY = 3; // Strict cap to prevent rapid jittering
         for (const n of next) {
-          n.vx = (n.vx - n.x * 0.01) * 0.85;
-          n.vy = (n.vy - n.y * 0.01) * 0.85;
+          n.vx = (n.vx - n.x * 0.006) * 0.72; // Increased friction damping
+          n.vy = (n.vy - n.y * 0.006) * 0.72;
+          
+          const vel = Math.sqrt(n.vx * n.vx + n.vy * n.vy);
+          if (vel > MAX_VELOCITY) {
+            n.vx = (n.vx / vel) * MAX_VELOCITY;
+            n.vy = (n.vy / vel) * MAX_VELOCITY;
+          }
           n.x += n.vx; n.y += n.vy;
         }
 
@@ -178,6 +187,7 @@ export default function GraphView() {
     };
   }, [nodes.length, edges]);
 
+  // Canvas drawing loop
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas || nodes.length === 0) return;
@@ -191,17 +201,20 @@ export default function GraphView() {
     ctx.translate(width / 2 + x, height / 2 + y);
     ctx.scale(scale, scale);
 
-    ctx.lineWidth = 1;
+    // Draw relation lines/edges
+    ctx.lineWidth = 1.2;
     for (const e of edges) {
       const a = nodeMap.current[e.source], b = nodeMap.current[e.target];
       if (!a || !b) continue;
       ctx.beginPath();
       ctx.moveTo(a.x, a.y);
       ctx.lineTo(b.x, b.y);
-      ctx.strokeStyle = 'rgba(255, 255, 255, 0.05)';
+      // Faint visible relationship paths
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.16)';
       ctx.stroke();
     }
 
+    // Draw entity nodes
     for (const n of nodes) {
       const color = NODE_COLORS[n.type] || '#94a3b8';
       const isSelected = selected?.id === n.id;
@@ -209,7 +222,7 @@ export default function GraphView() {
 
       if (isSelected) {
         ctx.shadowColor = color;
-        ctx.shadowBlur = 15;
+        ctx.shadowBlur = 18;
       }
       ctx.beginPath();
       ctx.arc(n.x, n.y, r, 0, Math.PI * 2);
@@ -217,10 +230,11 @@ export default function GraphView() {
       ctx.fill();
       ctx.shadowBlur = 0;
 
+      // Draw labels
       ctx.font = `${isSelected ? '700' : '400'} ${r < 12 ? 9 : 10}px Geist, sans-serif`;
-      ctx.fillStyle = isSelected ? '#ffffff' : 'rgba(248, 250, 252, 0.7)';
+      ctx.fillStyle = isSelected ? '#ffffff' : 'rgba(248, 250, 252, 0.75)';
       ctx.textAlign = 'center';
-      ctx.fillText(n.label.slice(0, 20), n.x, n.y + r + 12);
+      ctx.fillText(n.label.slice(0, 24), n.x, n.y + r + 13);
     }
     ctx.restore();
   }, [nodes, edges, selected]);
@@ -234,7 +248,7 @@ export default function GraphView() {
     
     for (const n of Object.values(nodeMap.current)) {
       const dx = n.x - mx, dy = n.y - my;
-      if (Math.sqrt(dx*dx + dy*dy) < 16) {
+      if (Math.sqrt(dx*dx + dy*dy) < 18) {
         setSelected(n);
         fetchNeighbors(n.id).then(setNeighbors);
         return;
@@ -264,6 +278,7 @@ export default function GraphView() {
 
   return (
     <div className="flex flex-col h-full bg-background overflow-hidden relative">
+      {/* Top Header Controls */}
       <div className="flex items-center justify-between px-6 h-12 bg-card/60 border-b border-border select-none z-10">
         <div className="flex items-center space-x-2">
           <Network className="w-4 h-4 text-primary" />
@@ -273,6 +288,7 @@ export default function GraphView() {
           </span>
         </div>
 
+        {/* Legend */}
         <div className="hidden lg:flex items-center space-x-3 text-[10px]">
           {Object.entries(NODE_COLORS).map(([type, color]) => (
             <div key={type} className="flex items-center space-x-1.5 font-mono">
@@ -283,11 +299,12 @@ export default function GraphView() {
         </div>
       </div>
 
+      {/* Graph Area */}
       <div className="flex-1 relative bg-[#070a10]">
         {loadingGraph ? (
-          <div className="absolute inset-0 flex flex-col items-center justify-center space-y-3">
-            <Activity className="w-8 h-8 text-primary animate-pulse" />
-            <span className="text-xs text-muted-foreground font-mono">RETRIEVING GRAPH DATA...</span>
+          <div className="absolute inset-0 flex flex-col items-center justify-center space-y-3 select-none">
+            <Loader2 className="w-8 h-8 text-primary animate-spin mb-2" />
+            <span className="text-xs text-muted-foreground font-mono tracking-widest">QUERYING LIVE GRAPH DATABASES...</span>
           </div>
         ) : (
           <canvas
@@ -303,6 +320,7 @@ export default function GraphView() {
           />
         )}
 
+        {/* Selection Inspector */}
         {selected && (
           <div className="absolute top-4 right-4 w-80 bg-card/95 backdrop-blur-sm border border-border rounded-lg shadow-xl p-4 z-20 flex flex-col space-y-4 max-h-[85%] overflow-y-auto">
             <div>
@@ -319,19 +337,24 @@ export default function GraphView() {
               </span>
             </div>
 
-            {neighbors.length > 0 && (
-              <div className="space-y-2 border-t border-border pt-3">
-                <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest font-mono">Adjacencies ({neighbors.length})</span>
+            {/* Adjacencies list */}
+            <div className="space-y-2 border-t border-border pt-3">
+              <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest font-mono">
+                Adjacency Matrix ({neighbors.length})
+              </span>
+              {neighbors.length === 0 ? (
+                <p className="text-[10px] text-muted-foreground font-sans">No adjacent connections found in Graph.</p>
+              ) : (
                 <ul className="space-y-1.5 font-mono text-[10px] text-muted-foreground">
-                  {neighbors.slice(0, 8).map((n, i) => (
+                  {neighbors.slice(0, 10).map((n, i) => (
                     <li key={i} className="flex justify-between items-center p-1.5 rounded bg-muted/20 border border-border select-text">
-                      <span className="text-primary text-[9px] uppercase font-semibold">{n.relationship}</span>
+                      <span className="text-primary text-[8px] uppercase font-bold">{n.relationship}</span>
                       <span className="text-slate-300 font-sans max-w-[65%] truncate">{n.name}</span>
                     </li>
                   ))}
                 </ul>
-              </div>
-            )}
+              )}
+            </div>
           </div>
         )}
       </div>

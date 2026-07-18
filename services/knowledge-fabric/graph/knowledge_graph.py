@@ -89,3 +89,31 @@ class Neo4jKG:
         with self.driver.session() as session:
             result = session.run(cypher, params or {})
             return [dict(row) for row in result]
+
+    def get_graph_stats(self) -> Dict[str, Any]:
+        """Returns entity and relationship telemetry from Neo4j."""
+        if not self.driver:
+            return {"total_nodes": 0, "total_relations": 0, "entity_types": {}}
+        try:
+            with self.driver.session() as session:
+                node_res = session.run("MATCH (n:Entity) RETURN count(n) as node_count")
+                node_count = node_res.single()["node_count"]
+                
+                rel_res = session.run("MATCH (:Entity)-[r]->(:Entity) RETURN count(r) as rel_count")
+                rel_count = rel_res.single()["rel_count"]
+                
+                type_res = session.run("MATCH (e:Entity) RETURN e.entity_type as type, count(e) as count")
+                entity_types = {}
+                for row in type_res:
+                    t = row["type"] or "unknown"
+                    entity_types[t] = row["count"]
+                
+                return {
+                    "total_nodes": node_count,
+                    "total_relations": rel_count,
+                    "entity_types": entity_types
+                }
+        except Exception as e:
+            print(f"[knowledge_graph] Error querying stats: {e}", flush=True)
+            return {"total_nodes": 0, "total_relations": 0, "entity_types": {}}
+

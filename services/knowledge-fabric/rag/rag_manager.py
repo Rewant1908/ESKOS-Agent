@@ -129,3 +129,30 @@ class QdrantRAG:
                 hits = self.search(intent, query_vector, limit=limit_per_intent, score_threshold=0.5)
                 aggregated[intent] = hits
         return aggregated
+
+    def get_stats(self) -> Dict[str, Any]:
+        """Returns collection sizes and total vectors count from Qdrant."""
+        if not self.client:
+            return {"total_vectors": 0, "collections": {}}
+        try:
+            stats = {}
+            total_vectors = 0
+            for col_key, col_name in COLLECTION_MAP.items():
+                try:
+                    if self.client.collection_exists(collection_name=col_name):
+                        info = self.client.get_collection(collection_name=col_name)
+                        count = getattr(info, "points_count", None) or getattr(info, "vectors_count", 0) or 0
+                        stats[col_key] = count
+                        total_vectors += count
+                    else:
+                        stats[col_key] = 0
+                except Exception:
+                    stats[col_key] = 0
+            return {
+                "total_vectors": total_vectors,
+                "collections": stats
+            }
+        except Exception as e:
+            print(f"[rag_manager] Error fetching stats: {e}", flush=True)
+            return {"total_vectors": 0, "collections": {}}
+

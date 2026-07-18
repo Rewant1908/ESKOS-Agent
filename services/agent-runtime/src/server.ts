@@ -46,6 +46,14 @@ app.post("/api/v1/agent/chat", async (req, res) => {
   }
 });
 
+app.get("/api/v1/agent/chat", (_req, res) => {
+  res.status(405).json({
+    error: "Method Not Allowed",
+    message: "GET is not supported for this endpoint. Please make a POST request with a JSON body containing `message` (and optionally `session_id`)."
+  });
+});
+
+
 // ── Tool Registry ──────────────────────────────────────────────────────────
 app.get("/api/v1/agent/tools", (_req, res) => {
   try {

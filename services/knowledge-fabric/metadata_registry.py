@@ -18,9 +18,10 @@ def get_conn():
     )
 
 def init_db():
-    """Initializes tables for metadata and chunks registry."""
+    """Initializes tables for metadata, chunks, and ontologies."""
     with get_conn() as conn:
         with conn.cursor() as cur:
+            # 1. Core Metadata & Chunks
             cur.execute("""
                 CREATE TABLE IF NOT EXISTS documents (
                     doc_id VARCHAR(255) PRIMARY KEY,
@@ -70,6 +71,89 @@ def init_db():
                 CREATE INDEX IF NOT EXISTS idx_doc_type ON documents(document_type);
                 CREATE INDEX IF NOT EXISTS idx_doc_freshness ON documents(freshness_state);
             """)
+
+            # 2. Ontology Meta-Schema Tables
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS ontology_classes (
+                    class_name VARCHAR(100) PRIMARY KEY,
+                    description TEXT NOT NULL,
+                    color VARCHAR(20) NOT NULL,
+                    properties JSONB DEFAULT '{}',
+                    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+                );
+                
+                CREATE TABLE IF NOT EXISTS ontology_relations (
+                    relation_type VARCHAR(100) PRIMARY KEY,
+                    source_class VARCHAR(100) REFERENCES ontology_classes(class_name) ON DELETE CASCADE,
+                    target_class VARCHAR(100) REFERENCES ontology_classes(class_name) ON DELETE CASCADE,
+                    description TEXT NOT NULL,
+                    properties JSONB DEFAULT '{}',
+                    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+                );
+                
+                CREATE TABLE IF NOT EXISTS query_logs (
+                    query_id SERIAL PRIMARY KEY,
+                    query_text TEXT NOT NULL,
+                    trust_score DOUBLE PRECISION NOT NULL,
+                    matched_chunks_count INT NOT NULL,
+                    response_status VARCHAR(50) NOT NULL,
+                    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+                );
+            """)
+
+            # 3. Seed initial scientific ontology values if tables are empty
+            cur.execute("SELECT COUNT(*) FROM ontology_classes")
+            if cur.fetchone()[0] == 0:
+                print("[metadata_registry] Seeding default scientific ontology classes...", flush=True)
+                default_classes = [
+                    ("Product", "Scientific instruments, glassware, and lab items.", "#3B82F6", '{"sku": "string", "manufacturer": "string"}'),
+                    ("Material", "Glassware composition, borosilicate specifications, thermal limits.", "#10B981", '{"borosilicate_grade": "string", "max_temp": "int"}'),
+                    ("Application", "Scientific processes, distillation, vacuum filtration use-cases.", "#F59E0B", '{"laboratory_domain": "string"}'),
+                    ("Standard", "Regulatory and manufacturing specifications, e.g. ISO 3585, ASTM.", "#EF4444", '{"compliance_id": "string"}'),
+                    ("Chemical", "Chemical substances, reagents, and media.", "#8B5CF6", '{"cas_number": "string", "ph_level": "float"}'),
+                    ("Experiment", "SOP procedures, scientific tests, and trials.", "#EC4899", '{"sop_reference": "string"}')
+                ]
+                for name, desc, color, props in default_classes:
+                    cur.execute("""
+                        INSERT INTO ontology_classes (class_name, description, color, properties)
+                        VALUES (%s, %s, %s, %s)
+                    """, (name, desc, color, props))
+
+            cur.execute("SELECT COUNT(*) FROM ontology_relations")
+            if cur.fetchone()[0] == 0:
+                print("[metadata_registry] Seeding default scientific ontology relationships...", flush=True)
+                default_relations = [
+                    ("MANUFACTURED_FROM", "Product", "Material", "Custom composition and glass engineering rules.", '{}'),
+                    ("USED_IN", "Product", "Application", "Validation procedures for laboratory glassware.", '{}'),
+                    ("COMPLIANT_WITH", "Product", "Standard", "Regulatory compliance tags.", '{}'),
+                    ("INTERACTS_WITH", "Chemical", "Material", "Chemical compatibility profiles.", '{}'),
+                    ("TESTED_IN", "Product", "Experiment", "Lab verification test protocols.", '{}')
+                ]
+                for rel, src, tgt, desc, props in default_relations:
+                    cur.execute("""
+                        INSERT INTO ontology_relations (relation_type, source_class, target_class, description, properties)
+                        VALUES (%s, %s, %s, %s, %s)
+                    """, (rel, src, tgt, desc, props))
+
+            # 4. Seed mock query logs if empty
+            cur.execute("SELECT COUNT(*) FROM query_logs")
+            if cur.fetchone()[0] == 0:
+                print("[metadata_registry] Seeding mock failed and successful queries...", flush=True)
+                mock_logs = [
+                    ("quartz distillation columns max pressure index", 0.0, 0, "no_results"),
+                    ("quartz distillation columns max pressure index", 0.0, 0, "no_results"),
+                    ("high-temperature pressure reactors specifications", 35.5, 1, "low_confidence"),
+                    ("high-temperature pressure reactors specifications", 42.0, 1, "low_confidence"),
+                    ("fluoropolymer lined beaker chemical compatibility", 0.0, 0, "no_results"),
+                    ("glass beaker thermal shock parameters", 95.0, 6, "success"),
+                    ("Liebig condenser dimensions", 98.2, 8, "success")
+                ]
+                for q, score, count, status in mock_logs:
+                    cur.execute("""
+                        INSERT INTO query_logs (query_text, trust_score, matched_chunks_count, response_status)
+                        VALUES (%s, %s, %s, %s)
+                    """, (q, score, count, status))
+
             conn.commit()
 
 def store_document(doc: Dict[str, Any], chunks: List[Dict[str, Any]]) -> None:
@@ -166,3 +250,168 @@ def get_document(doc_id: str) -> Optional[Dict[str, Any]]:
             
             doc["chunks"] = chunks
             return doc
+
+def get_db_stats() -> Dict[str, Any]:
+    """Returns database telemetry including doc and chunk counts."""
+    try:
+        with get_conn() as conn:
+            with conn.cursor() as cur:
+                cur.execute("SELECT COUNT(*) FROM documents")
+                total_documents = cur.fetchone()[0]
+                
+                cur.execute("SELECT COUNT(*) FROM chunks")
+                total_chunks = cur.fetchone()[0]
+                
+                cur.execute("SELECT document_type, COUNT(*) FROM documents GROUP BY document_type")
+                doc_types = {row[0]: row[1] for row in cur.fetchall()}
+                
+                return {
+                    "total_documents": total_documents,
+                    "total_chunks": total_chunks,
+                    "document_types": doc_types
+                }
+    except Exception as e:
+        print(f"[metadata_registry] Error fetching db stats: {e}", flush=True)
+        return {
+            "total_documents": 0,
+            "total_chunks": 0,
+            "document_types": {}
+        }
+
+def get_ontology_classes() -> List[Dict[str, Any]]:
+    with get_conn() as conn:
+        with conn.cursor() as cur:
+            cur.execute("SELECT class_name, description, color, properties FROM ontology_classes ORDER BY class_name")
+            return [{"class_name": r[0], "description": r[1], "color": r[2], "properties": r[3]} for r in cur.fetchall()]
+
+def upsert_ontology_class(class_name: str, description: str, color: str, properties: Dict[str, Any]) -> None:
+    with get_conn() as conn:
+        with conn.cursor() as cur:
+            cur.execute("""
+                INSERT INTO ontology_classes (class_name, description, color, properties)
+                VALUES (%s, %s, %s, %s)
+                ON CONFLICT (class_name) DO UPDATE SET
+                    description = EXCLUDED.description,
+                    color = EXCLUDED.color,
+                    properties = EXCLUDED.properties
+            """, (class_name, description, color, json.dumps(properties)))
+            conn.commit()
+
+def delete_ontology_class(class_name: str) -> None:
+    with get_conn() as conn:
+        with conn.cursor() as cur:
+            cur.execute("DELETE FROM ontology_classes WHERE class_name = %s", (class_name,))
+            conn.commit()
+
+def get_ontology_relations() -> List[Dict[str, Any]]:
+    with get_conn() as conn:
+        with conn.cursor() as cur:
+            cur.execute("SELECT relation_type, source_class, target_class, description, properties FROM ontology_relations ORDER BY relation_type")
+            return [{
+                "relation_type": r[0],
+                "source_class": r[1],
+                "target_class": r[2],
+                "description": r[3],
+                "properties": r[4]
+            } for r in cur.fetchall()]
+
+def upsert_ontology_relation(relation_type: str, source_class: str, target_class: str, description: str, properties: Dict[str, Any]) -> None:
+    with get_conn() as conn:
+        with conn.cursor() as cur:
+            cur.execute("""
+                INSERT INTO ontology_relations (relation_type, source_class, target_class, description, properties)
+                VALUES (%s, %s, %s, %s, %s)
+                ON CONFLICT (relation_type) DO UPDATE SET
+                    source_class = EXCLUDED.source_class,
+                    target_class = EXCLUDED.target_class,
+                    description = EXCLUDED.description,
+                    properties = EXCLUDED.properties
+            """, (relation_type, source_class, target_class, description, json.dumps(properties)))
+            conn.commit()
+
+def delete_ontology_relation(relation_type: str) -> None:
+    with get_conn() as conn:
+        with conn.cursor() as cur:
+            cur.execute("DELETE FROM ontology_relations WHERE relation_type = %s", (relation_type,))
+            conn.commit()
+
+def list_documents(limit: int = 100, offset: int = 0, org_id: Optional[str] = None) -> List[Dict[str, Any]]:
+    with get_conn() as conn:
+        with conn.cursor() as cur:
+            if org_id:
+                cur.execute("SELECT * FROM documents WHERE org_id = %s ORDER BY created_at DESC LIMIT %s OFFSET %s", (org_id, limit, offset))
+            else:
+                cur.execute("SELECT * FROM documents ORDER BY created_at DESC LIMIT %s OFFSET %s", (limit, offset))
+            rows = cur.fetchall()
+            colnames = [desc[0] for desc in cur.description]
+            return [dict(zip(colnames, r)) for r in rows]
+
+def update_document_metadata(doc_id: str, fields: Dict[str, Any]) -> None:
+    if not fields:
+        return
+    query_parts = []
+    values = []
+    for k, v in fields.items():
+        query_parts.append(f"{k} = %s")
+        values.append(v)
+    values.append(doc_id)
+    query_str = f"UPDATE documents SET {', '.join(query_parts)}, updated_at = CURRENT_TIMESTAMP WHERE doc_id = %s"
+    
+    with get_conn() as conn:
+        with conn.cursor() as cur:
+            cur.execute(query_str, tuple(values))
+            conn.commit()
+
+def delete_document(doc_id: str) -> None:
+    with get_conn() as conn:
+        with conn.cursor() as cur:
+            cur.execute("DELETE FROM documents WHERE doc_id = %s", (doc_id,))
+            conn.commit()
+
+def log_query(query_text: str, trust_score: float, matched_chunks_count: int, response_status: str) -> None:
+    with get_conn() as conn:
+        with conn.cursor() as cur:
+            cur.execute("""
+                INSERT INTO query_logs (query_text, trust_score, matched_chunks_count, response_status)
+                VALUES (%s, %s, %s, %s)
+            """, (query_text, trust_score, matched_chunks_count, response_status))
+            conn.commit()
+
+def get_knowledge_gaps() -> List[Dict[str, Any]]:
+    with get_conn() as conn:
+        with conn.cursor() as cur:
+            cur.execute("""
+                SELECT query_text, COUNT(*), MIN(trust_score), MAX(created_at), response_status 
+                FROM query_logs 
+                WHERE response_status IN ('no_results', 'low_confidence') 
+                GROUP BY query_text, response_status 
+                ORDER BY COUNT(*) DESC
+            """)
+            rows = cur.fetchall()
+            gaps = []
+            for r in rows:
+                query = r[0]
+                count = r[1]
+                score = r[2]
+                dt = r[3]
+                status = r[4]
+                
+                category = "general"
+                for kw in ["reactor", "beaker", "column", "glassware", "chemical", "standard", "filtration"]:
+                    if kw in query.lower():
+                        category = kw + "s"
+                        break
+                        
+                gaps.append({
+                    "query": query,
+                    "count": count,
+                    "trust_score": score,
+                    "last_occurred": dt.isoformat(),
+                    "category": category,
+                    "severity": "HIGH" if status == "no_results" else "MEDIUM"
+                })
+            return gaps
+
+
+
+

@@ -74,6 +74,48 @@ services:
         protocols: [http, https]
         strip_path: false
 
+      - name: knowledge-graph-route
+        paths:
+          - /api/v1/knowledge/graph
+        methods: [GET, OPTIONS]
+        protocols: [http, https]
+        strip_path: false
+
+      - name: knowledge-stats-route
+        paths:
+          - /api/v1/knowledge/stats
+        methods: [GET, OPTIONS]
+        protocols: [http, https]
+        strip_path: false
+
+      - name: knowledge-embeddings-route
+        paths:
+          - /api/v1/knowledge/embeddings
+        methods: [GET, OPTIONS]
+        protocols: [http, https]
+        strip_path: false
+
+      - name: knowledge-documents-management-route
+        paths:
+          - /api/v1/knowledge/documents
+        methods: [GET, PATCH, DELETE, OPTIONS]
+        protocols: [http, https]
+        strip_path: false
+
+      - name: knowledge-ontology-classes-route
+        paths:
+          - /api/v1/knowledge/ontology/classes
+        methods: [GET, POST, DELETE, OPTIONS]
+        protocols: [http, https]
+        strip_path: false
+
+      - name: knowledge-ontology-relations-route
+        paths:
+          - /api/v1/knowledge/ontology/relations
+        methods: [GET, POST, DELETE, OPTIONS]
+        protocols: [http, https]
+        strip_path: false
+
       - name: knowledge-fabric-health-route
         paths:
           - /healthz
@@ -120,7 +162,7 @@ services:
       - name: agent-chat-route
         paths:
           - /api/v1/agent/chat
-        methods: [POST, OPTIONS]
+        methods: [GET, POST, OPTIONS]
         protocols: [http, https]
         strip_path: false
 
