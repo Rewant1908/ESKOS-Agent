@@ -24,6 +24,9 @@ import ProvenanceView from "@/components/studios/governance/ProvenanceView";
 import CitationsView from "@/components/studios/governance/CitationsView";
 import AuditTrailView from "@/components/studios/governance/AuditTrailView";
 import ComplianceView from "@/components/studios/governance/ComplianceView";
+import SEOView from "@/components/studios/marketing/SEOView";
+import GEOView from "@/components/studios/marketing/GEOView";
+import AEOView from "@/components/studios/marketing/AEOView";
 import FallbackView from "@/components/studios/FallbackView";
 
 interface PageProps {
@@ -100,6 +103,19 @@ export default async function Page({ params }: PageProps) {
         return <AuditTrailView />;
       case "compliance":
         return <ComplianceView />;
+      default:
+        notFound();
+    }
+  }
+
+  if (studio === "marketing") {
+    switch (module) {
+      case "seo":
+        return <SEOView />;
+      case "geo":
+        return <GEOView />;
+      case "aeo":
+        return <AEOView />;
       default:
         notFound();
     }
