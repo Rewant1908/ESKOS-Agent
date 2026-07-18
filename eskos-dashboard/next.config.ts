@@ -4,6 +4,18 @@ const nextConfig: NextConfig = {
   async rewrites() {
     return [
       {
+        source: "/api/v1/../api/v1/:path*",
+        destination: `${process.env.KONG_BASE_URL || "http://localhost:8000"}/api/v1/:path*`,
+      },
+      {
+        source: "/api/api/v1/:path*",
+        destination: `${process.env.KONG_BASE_URL || "http://localhost:8000"}/api/v1/:path*`,
+      },
+      {
+        source: "/api/v1/api/v1/:path*",
+        destination: `${process.env.KONG_BASE_URL || "http://localhost:8000"}/api/v1/:path*`,
+      },
+      {
         source: "/api/v1/:path*",
         destination: `${process.env.KONG_BASE_URL || "http://localhost:8000"}/api/v1/:path*`,
       },
