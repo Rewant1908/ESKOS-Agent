@@ -308,4 +308,4 @@ consumers:
   - username: governance-reviewer
     tags: [tier-2, org:internal, role:reviewer]
     keyauth_credentials:
-      - key: eskos-gov-7e412a19baa8d404b53650eeaf49b33c37d5e1de0594d67c
+      - key: ${{GOVERNANCE_API_KEY}}
