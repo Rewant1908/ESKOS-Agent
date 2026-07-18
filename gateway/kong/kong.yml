@@ -109,7 +109,7 @@ services:
             - "https://*.ngrok-free.app"
             - "https://*.ngrok-free.dev"
           methods: [POST, OPTIONS]
-          headers: [Accept, Content-Type, ngrok-skip-browser-warning]
+          headers: [Accept, Content-Type, ngrok-skip-browser-warning, x-eskos-org-id]
           credentials: false
           max_age: 3600
       - name: rate-limiting
