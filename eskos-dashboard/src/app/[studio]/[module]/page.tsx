@@ -31,6 +31,8 @@ import HealthView from "@/components/studios/observability/HealthView";
 import RetrievalView from "@/components/studios/observability/RetrievalView";
 import ROIView from "@/components/studios/executive/ROIView";
 import CoverageView from "@/components/studios/executive/CoverageView";
+import TenantConfigView from "@/components/studios/admin/TenantConfigView";
+import ApiKeysView from "@/components/studios/admin/ApiKeysView";
 import FallbackView from "@/components/studios/FallbackView";
 
 interface PageProps {
@@ -142,6 +144,17 @@ export default async function Page({ params }: PageProps) {
         return <ROIView />;
       case "coverage":
         return <CoverageView />;
+      default:
+        notFound();
+    }
+  }
+
+  if (studio === "admin") {
+    switch (module) {
+      case "tenant-config":
+        return <TenantConfigView />;
+      case "api-keys":
+        return <ApiKeysView />;
       default:
         notFound();
     }
