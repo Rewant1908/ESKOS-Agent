@@ -1,7 +1,7 @@
 _format_version: "3.0"
 _transform: true
 
-# ── Services ──────────────────────────────────────────────────────────────
+# ── Services ────────────────────────────────────────────────────────────
 services:
 
   # ── Ingest path (write): via Hygiene Pipeline ─────────────────────────
@@ -227,4 +227,4 @@ consumers:
   - username: governance-reviewer
     tags: [tier-2, org:internal, role:reviewer]
     keyauth_credentials:
-      - key: eskos-gov-key-CHANGE-ME-b4f92a71c8
+      - key: eskos-gov-a721bf7ac1efcc463820ee8231a65e3307f2feec45fa555c
