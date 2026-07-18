@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { use } from "react";
 import { notFound } from "next/navigation";
 import DashboardView from "@/components/studios/knowledge/DashboardView";
 import ExplorerView from "@/components/studios/knowledge/ExplorerView";
@@ -61,8 +61,8 @@ const SIMULATED_MODULES = [
   "executive/coverage"
 ];
 
-export default async function Page({ params }: PageProps) {
-  const { studio, module } = await params;
+export default function Page({ params }: PageProps) {
+  const { studio, module } = use(params);
   let view: React.ReactNode = null;
 
   if (studio === "knowledge") {
