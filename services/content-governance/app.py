@@ -59,6 +59,7 @@ class DraftContent(BaseModel):
     created_at: str = datetime.datetime.utcnow().isoformat()
 
 class ApprovalRequest(BaseModel):
+    draft_id: str
     reviewer_id: str
     decision: str  # "APPROVED" or "REJECTED"
     comments: Optional[str] = None
@@ -94,9 +95,10 @@ def list_drafts(status: Optional[str] = "PENDING"):
         ).fetchall()
         return [dict(row) for row in rows]
 
-@app.post("/api/v1/governance/drafts/{draft_id}/review")
-def review_draft(draft_id: str, request: ApprovalRequest):
+@app.post("/api/v1/governance/review")
+def review_draft(request: ApprovalRequest):
     """Human reviewer approves or rejects a draft."""
+    draft_id = request.draft_id
     if request.decision not in ["APPROVED", "REJECTED"]:
         raise HTTPException(status_code=400, detail="Decision must be APPROVED or REJECTED")
 

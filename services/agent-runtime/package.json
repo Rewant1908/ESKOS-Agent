@@ -1,20 +1,22 @@
 {
-  "name": "agent-runtime",
-  "version": "1.0.0",
-  "description": "ESKOS AgentTool Runtime",
-  "main": "dist/index.js",
+  "name": "eskos-agent-runtime",
+  "version": "2.0.0",
+  "description": "ESKOS Gemini function-calling agent — grounded in the Knowledge Fabric via Kong, org-scoped, injection-guarded.",
+  "main": "dist/server.js",
   "scripts": {
     "build": "tsc",
-    "start": "node dist/index.js"
+    "start": "node dist/server.js",
+    "dev": "ts-node-dev --respawn src/server.ts"
   },
   "dependencies": {
-    "react": "^18.2.0",
-    "zod": "^3.22.4",
-    "axios": "^1.6.2"
+    "@google/generative-ai": "^0.21.0",
+    "axios": "^1.7.7",
+    "express": "^4.19.2"
   },
   "devDependencies": {
-    "@types/react": "^18.2.37",
-    "@types/node": "^20.9.0",
-    "typescript": "^5.2.2"
+    "@types/express": "^4.17.21",
+    "@types/node": "^20.14.0",
+    "ts-node-dev": "^2.0.0",
+    "typescript": "^5.5.4"
   }
 }

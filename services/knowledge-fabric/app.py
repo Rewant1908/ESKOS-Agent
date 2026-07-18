@@ -215,7 +215,7 @@ def query_knowledge(payload: QueryPayload):
 @app.post("/api/v1/knowledge/context")
 def get_knowledge_context(payload: QueryPayload):
     """
-    Specifically designed for AgentTool. Returns a pre-formatted Markdown 
+    Specifically designed for the Agent Runtime. Returns a pre-formatted Markdown 
     string containing the retrieved knowledge ready to be injected into a Gemini Prompt.
     """
     result = query_knowledge(payload)

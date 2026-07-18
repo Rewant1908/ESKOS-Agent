@@ -98,6 +98,31 @@ services:
         methods: [POST, OPTIONS]
         protocols: [http, https]
         strip_path: false
+  # ── Agent Runtime Service ───────────────────────────────────────────
+  - name: agent-runtime-service
+    url: http://agent-runtime:8091
+    plugins:
+      - name: cors
+        config:
+          origins:
+            - "http://localhost:3000"
+            - "https://*.ngrok-free.app"
+            - "https://*.ngrok-free.dev"
+          methods: [POST, OPTIONS]
+          headers: [Accept, Content-Type, ngrok-skip-browser-warning]
+          credentials: false
+          max_age: 3600
+      - name: rate-limiting
+        config:
+          minute: 30
+          policy: local
+    routes:
+      - name: agent-chat-route
+        paths:
+          - /api/v1/agent/chat
+        methods: [POST, OPTIONS]
+        protocols: [http, https]
+        strip_path: false
 
   # ── Content Governance Service ────────────────────────────────────────
   - name: content-governance-service
@@ -131,7 +156,7 @@ services:
 
       - name: governance-review-route
         paths:
-          - /api/v1/governance/drafts
+          - /api/v1/governance/review
         methods: [POST, OPTIONS]
         protocols: [http, https]
         strip_path: false
@@ -172,6 +197,19 @@ plugins:
       path: /dev/stdout
       reopen: true
 
+  # Key-auth on governance write routes — closes the unauthenticated write-access gap
+  - name: key-auth
+    route: governance-submit-route
+    config:
+      key_names: [apikey]
+      hide_credentials: true
+
+  - name: key-auth
+    route: governance-review-route
+    config:
+      key_names: [apikey]
+      hide_credentials: true
+
 # ── Consumers ────────────────────────────────────────────────────────────
 consumers:
   - username: eskos-dashboard
@@ -185,3 +223,8 @@ consumers:
 
   - username: goel-erp-connector
     tags: [tier-1, org:goel-scientific]
+
+  - username: governance-reviewer
+    tags: [tier-2, org:internal, role:reviewer]
+    keyauth_credentials:
+      - key: eskos-gov-key-CHANGE-ME-b4f92a71c8

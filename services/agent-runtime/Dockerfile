@@ -1,13 +1,15 @@
-FROM node:18-alpine
-
+FROM node:20-slim AS build
 WORKDIR /app
-
-COPY package*.json ./
+COPY package.json ./
 RUN npm install
-
 COPY tsconfig.json ./
-COPY src/ ./src/
-
+COPY src ./src
 RUN npm run build
 
-CMD ["npm", "start"]
+FROM node:20-slim
+WORKDIR /app
+COPY --from=build /app/dist ./dist
+COPY package.json ./
+RUN npm install --omit=dev
+EXPOSE 8091
+CMD ["node", "dist/server.js"]

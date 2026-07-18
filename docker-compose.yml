@@ -160,15 +160,19 @@ services:
       GEMINI_API_KEY: ${GEMINI_API_KEY}
     restart: unless-stopped
 
-  # --- AgentTool Runtime ---
+  # --- Agent Runtime ---
   agent-runtime:
     build: ./services/agent-runtime
     container_name: eskos-agent-runtime
+    ports:
+      - "8091:8091"
     depends_on:
       - knowledge-fabric
     environment:
       GEMINI_API_KEY: ${GEMINI_API_KEY}
-      FABRIC_URL: "http://knowledge-fabric:8090/api/v1/knowledge/context"
+      GEMINI_MODEL: gemini-2.0-flash
+      KONG_BASE_URL: http://kong:8000
+      PORT: 8091
     restart: unless-stopped
 
   # --- Content Governance Service (Phase 5) ---

@@ -74,7 +74,7 @@ resource knowledgeFabricApp 'Microsoft.App/containerApps@2023-05-01' = {
   }
 }
 
-// Container App: AgentTool Runtime
+// Container App: Agent Runtime
 resource agentRuntimeApp 'Microsoft.App/containerApps@2023-05-01' = {
   name: 'agent-runtime'
   location: location
