@@ -187,11 +187,27 @@ services:
       - "8081:8081"
     environment:
       GOVERNANCE_DB_PATH: /data/governance.db
+      PUBLISHING_SERVICE_URL: http://publishing-service:8092/api/v1/publish
     volumes:
       - governance_data:/data
+    restart: unless-stopped
+
+  # --- Publishing Service (Phase C) ---
+  publishing-service:
+    build: ./services/publishing-service
+    container_name: eskos-publishing-service
+    ports:
+      - "8092:8092"
+    environment:
+      WP_URL: http://localhost:8088/wp-json/wp/v2/posts
+      WP_USERNAME: admin
+      WP_PASSWORD: password123
     restart: unless-stopped
 
 volumes:
   qdrant_data:
   postgres_data:
   governance_data:
+  neo4j_data:
+  redis_data:
+  redpanda_data:

@@ -121,6 +121,27 @@ def review_draft(request: ApprovalRequest):
             "UPDATE drafts SET status = ?, updated_at = ? WHERE draft_id = ?",
             (request.decision, now, draft_id)
         )
+        # Trigger publishing service if approved
+        published_url = None
+        if request.decision == "APPROVED":
+            try:
+                import requests
+                publish_payload = {
+                    "draft_id": draft_id,
+                    "title": f"Scientific Release: {draft_id}",
+                    "content": draft["content"],
+                    "org_id": draft["org_id"]
+                }
+                pub_url = os.getenv("PUBLISHING_SERVICE_URL", "http://publishing-service:8092/api/v1/publish")
+                pub_res = requests.post(pub_url, json=publish_payload, timeout=8)
+                if pub_res.status_code == 200:
+                    pub_data = pub_res.json()
+                    published_url = pub_data.get("url")
+                    after_state_doc["published_url"] = published_url
+                    print(f"[content-governance] Draft {draft_id} successfully published: {published_url}", flush=True)
+            except Exception as e:
+                print(f"[content-governance] Failed to trigger publishing service: {e}", flush=True)
+
         conn.execute("""
             INSERT INTO audit_log (
                 draft_id, reviewer_id, decision, comments, timestamp, content_hash,
@@ -131,12 +152,10 @@ def review_draft(request: ApprovalRequest):
             now, content_hash, before_state, json.dumps(after_state_doc, sort_keys=True)
         ))
     
-    # If approved, we would push to Kafka 'hygiene-passed' or 'publishing-queue'
-    # For now, we just return success
-    
     return {
         "message": f"Draft {request.decision}",
-        "audit_receipt": content_hash
+        "audit_receipt": content_hash,
+        "published_url": published_url
     }
 
 @app.get("/api/v1/governance/audit")
