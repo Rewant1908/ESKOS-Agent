@@ -14,13 +14,6 @@ services:
         methods: [POST]
         protocols: [http, https]
         strip_path: false
-        plugins:
-          - name: mtls-auth
-            config:
-              ca_certificates:
-                - ca-ca112233
-              authenticated_groups_allowed:
-                - scientific-connectors
 
   # ── Knowledge Fabric: all read/write endpoints ────────────────────────
   - name: knowledge-fabric-service
