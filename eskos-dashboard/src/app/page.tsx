@@ -116,8 +116,8 @@ export default function LandingPage() {
       <main className="max-w-7xl mx-auto w-full px-6 py-16 lg:py-24 z-10 relative flex-1 flex flex-col justify-center">
         <div className="max-w-3xl space-y-8">
           <div className="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-primary/10 border border-primary/20 text-primary text-[10px] font-bold uppercase tracking-widest font-mono">
-            <Activity className="w-3.5 h-3.5 text-primary" />
-            <span>Phase 6 Enterprise Production Core</span>
+            <Activity className="w-3.5 h-3.5 text-primary animate-pulse" />
+            <span>ESKOS Build Stage: 59.1% (Phase 6 Core)</span>
           </div>
 
           <div className="space-y-4">

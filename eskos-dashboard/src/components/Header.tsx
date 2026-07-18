@@ -87,6 +87,12 @@ export default function Header({ currentStudio }: HeaderProps) {
 
       {/* Right control utilities */}
       <div className="flex items-center space-x-3.5">
+        {/* Platform Completion Stage Badge */}
+        <div className="hidden md:flex items-center space-x-2 px-3 py-1.5 bg-primary/10 border border-primary/25 rounded-full text-[10px] font-bold font-mono tracking-wider text-primary uppercase shadow-[0_0_12px_rgba(79,70,229,0.15)]">
+          <div className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
+          <span>ESKOS BUILD: 59.1%</span>
+        </div>
+
         {/* Notifications */}
         <NotificationsPanel />
 

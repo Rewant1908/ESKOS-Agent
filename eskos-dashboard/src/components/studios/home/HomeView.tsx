@@ -85,6 +85,14 @@ export default function HomeView() {
               <span className="text-emerald-400 font-bold block mt-0.5">$394,200</span>
             </div>
           </div>
+
+          <div className="bg-card/40 border border-border/80 px-4 py-3 rounded-xl flex items-center space-x-3 backdrop-blur-sm shadow-[0_0_15px_rgba(79,70,229,0.12)]">
+            <Atom className="w-5 h-5 text-primary animate-[spin_4s_linear_infinite]" />
+            <div>
+              <span className="text-[9px] text-muted-foreground block uppercase font-bold tracking-wider">Build Stage</span>
+              <span className="text-primary font-bold block mt-0.5">59.1% Active</span>
+            </div>
+          </div>
         </div>
       </div>
 
