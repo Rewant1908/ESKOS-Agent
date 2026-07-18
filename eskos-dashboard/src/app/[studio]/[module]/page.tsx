@@ -36,6 +36,8 @@ import ApiKeysView from "@/components/studios/admin/ApiKeysView";
 import HomeView from "@/components/studios/home/HomeView";
 import FallbackView from "@/components/studios/FallbackView";
 
+import { AlertTriangle } from "lucide-react";
+
 interface PageProps {
   params: Promise<{
     studio: string;
@@ -43,132 +45,202 @@ interface PageProps {
   }>;
 }
 
+const SIMULATED_MODULES = [
+  "agent/planner",
+  "agent/workflows",
+  "agent/monitoring",
+  "agent/cost-analytics",
+  "governance/provenance",
+  "governance/citations",
+  "governance/compliance",
+  "knowledge/embeddings",
+  "knowledge/version-control",
+  "marketing/geo",
+  "marketing/aeo",
+  "observability/retrieval",
+  "executive/roi",
+  "executive/coverage"
+];
+
 export default async function Page({ params }: PageProps) {
   const { studio, module } = await params;
+  let view: React.ReactNode = null;
 
   if (studio === "knowledge") {
     switch (module) {
       case "dashboard":
-        return <DashboardView />;
+        view = <DashboardView />;
+        break;
       case "explorer":
-        return <ExplorerView />;
+        view = <ExplorerView />;
+        break;
       case "metadata":
-        return <MetadataView />;
+        view = <MetadataView />;
+        break;
       case "ontology":
-        return <OntologyView />;
+        view = <OntologyView />;
+        break;
       case "graph":
-        return <GraphView />;
+        view = <GraphView />;
+        break;
       case "chunks":
-        return <ChunkView />;
+        view = <ChunkView />;
+        break;
       case "embeddings":
-        return <EmbeddingView />;
+        view = <EmbeddingView />;
+        break;
       case "trust":
-        return <TrustView />;
+        view = <TrustView />;
+        break;
       case "search":
-        return <SearchView />;
+        view = <SearchView />;
+        break;
       case "version-control":
-        return <VersionView />;
+        view = <VersionView />;
+        break;
       case "gap-analysis":
-        return <GapView />;
+        view = <GapView />;
+        break;
       default:
         notFound();
     }
-  }
-
-  if (studio === "agent") {
+  } else if (studio === "agent") {
     switch (module) {
       case "chat":
-        return <ChatView />;
+        view = <ChatView />;
+        break;
       case "planner":
-        return <PlannerView />;
+        view = <PlannerView />;
+        break;
       case "workflows":
-        return <WorkflowBuilderView />;
+        view = <WorkflowBuilderView />;
+        break;
       case "tools":
-        return <ToolRegistryView />;
+        view = <ToolRegistryView />;
+        break;
       case "prompts":
-        return <PromptRegistryView />;
+        view = <PromptRegistryView />;
+        break;
       case "memory":
-        return <MemoryInspectorView />;
+        view = <MemoryInspectorView />;
+        break;
       case "monitoring":
-        return <AgentMonitoringView />;
+        view = <AgentMonitoringView />;
+        break;
       case "cost-analytics":
-        return <CostAnalyticsView />;
+        view = <CostAnalyticsView />;
+        break;
       default:
         notFound();
     }
-  }
-
-  if (studio === "governance") {
+  } else if (studio === "governance") {
     switch (module) {
       case "review-queue":
-        return <ReviewQueueView />;
+        view = <ReviewQueueView />;
+        break;
       case "provenance":
-        return <ProvenanceView />;
+        view = <ProvenanceView />;
+        break;
       case "citations":
-        return <CitationsView />;
+        view = <CitationsView />;
+        break;
       case "audit-trail":
-        return <AuditTrailView />;
+        view = <AuditTrailView />;
+        break;
       case "compliance":
-        return <ComplianceView />;
+        view = <ComplianceView />;
+        break;
       default:
         notFound();
     }
-  }
-
-  if (studio === "marketing") {
+  } else if (studio === "marketing") {
     switch (module) {
       case "seo":
-        return <SEOView />;
+        view = <SEOView />;
+        break;
       case "geo":
-        return <GEOView />;
+        view = <GEOView />;
+        break;
       case "aeo":
-        return <AEOView />;
+        view = <AEOView />;
+        break;
       default:
         notFound();
     }
-  }
-
-  if (studio === "observability") {
+  } else if (studio === "observability") {
     switch (module) {
       case "health":
-        return <HealthView />;
+        view = <HealthView />;
+        break;
       case "retrieval":
-        return <RetrievalView />;
+        view = <RetrievalView />;
+        break;
       default:
         notFound();
     }
-  }
-
-  if (studio === "executive") {
+  } else if (studio === "executive") {
     switch (module) {
       case "roi":
-        return <ROIView />;
+        view = <ROIView />;
+        break;
       case "coverage":
-        return <CoverageView />;
+        view = <CoverageView />;
+        break;
       default:
         notFound();
     }
-  }
-
-  if (studio === "admin") {
+  } else if (studio === "admin") {
     switch (module) {
       case "tenant-config":
-        return <TenantConfigView />;
+        view = <TenantConfigView />;
+        break;
       case "api-keys":
-        return <ApiKeysView />;
+        view = <ApiKeysView />;
+        break;
       default:
         notFound();
     }
-  }
-
-  if (studio === "home") {
+  } else if (studio === "home") {
     switch (module) {
       case "dashboard":
-        return <HomeView />;
+        view = <HomeView />;
+        break;
       default:
         notFound();
     }
+  } else {
+    view = <FallbackView studio={studio} module={module} />;
   }
 
-  return <FallbackView studio={studio} module={module} />;
+  const isSimulated = SIMULATED_MODULES.includes(`${studio}/${module}`);
+
+  if (isSimulated && view) {
+    return (
+      <div className="relative w-full h-full flex flex-col">
+        {/* Premium Simulation Alert Ribbon */}
+        <div className="bg-amber-500/5 border-b border-amber-500/10 px-6 py-2 flex items-center justify-between backdrop-blur-sm z-20 text-[11px] font-mono text-amber-400/90 select-none shrink-0">
+          <div className="flex items-center space-x-2.5">
+            <span className="relative flex h-2 w-2">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-500 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-amber-500"></span>
+            </span>
+            <span className="font-bold tracking-wider uppercase flex items-center gap-1.5">
+              <AlertTriangle className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+              Simulation Mode
+            </span>
+            <span className="text-amber-500/20">|</span>
+            <span className="text-[10px] text-amber-400/60 font-sans">This module is currently populated with offline demonstration telemetry.</span>
+          </div>
+          <div className="px-2 py-0.5 rounded border border-amber-500/20 text-[9px] font-bold uppercase tracking-widest bg-amber-500/5">
+            Simulated Data
+          </div>
+        </div>
+        <div className="flex-1 overflow-hidden">
+          {view}
+        </div>
+      </div>
+    );
+  }
+
+  return view;
 }
