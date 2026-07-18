@@ -5,6 +5,7 @@ import { getProjectRules } from "../memory/projectRules";
 import { getPersistentMemory } from "../memory/persistentMemory";
 import { getSessionHistory, saveSessionHistory } from "../memory/ephemeralContext";
 import { PromptRegistry } from "../registries/PromptRegistry";
+import { ToolRegistry } from "../registries/ToolRegistry";
 
 const GEMINI_MODEL = process.env.GEMINI_MODEL || "gemini-3.5-flash";
 
@@ -103,10 +104,15 @@ export async function runAgentChat(userMessage: string, ctx: ToolContext, sessio
 
   addTrace("planner", "Planning Strategy", "Decomposing query requirements and checking ontology schema.");
 
+  const activeToolDeclarations = TOOL_DECLARATIONS.filter(t => ToolRegistry.isToolActive(t.name));
+  const geminiTools = activeToolDeclarations.length > 0
+    ? [{ functionDeclarations: activeToolDeclarations }] as any
+    : undefined;
+
   const model = getClient().getGenerativeModel({
     model: GEMINI_MODEL,
     systemInstruction: finalSystemInstruction,
-    tools: [{ functionDeclarations: TOOL_DECLARATIONS }] as any,
+    tools: geminiTools,
   });
 
   const history = getSessionHistory(sessionId);
@@ -127,7 +133,7 @@ export async function runAgentChat(userMessage: string, ctx: ToolContext, sessio
         const newModel = getClient().getGenerativeModel({
           model: modelName,
           systemInstruction: finalSystemInstruction,
-          tools: [{ functionDeclarations: TOOL_DECLARATIONS }] as any,
+          tools: geminiTools,
         });
         
         // Grab current history to restore session state

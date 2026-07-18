@@ -52,12 +52,10 @@ export default function ReviewQueueView() {
     if (!selectedDraft || reviewing) return;
     try {
       setReviewing(true);
-      const res = await fetch(`${KONG_URL}/api/v1/governance/review`, {
+      const res = await fetch("/api/governance/review", {
         method: "POST",
         headers: {
-          "Content-Type": "application/json",
-          "ngrok-skip-browser-warning": "true",
-          "apikey": "eskos-gov-7e412a19baa8d404b53650eeaf49b33c37d5e1de0594d67c"
+          "Content-Type": "application/json"
         },
         body: JSON.stringify({
           draft_id: selectedDraft.draft_id,
