@@ -20,7 +20,7 @@ export default async function StudioLayout({
       {/* Main Container */}
       <div className="flex flex-1 overflow-hidden">
         {/* Navigation Sidebar */}
-        <Sidebar currentStudio={studio} />
+        {studio !== "home" && <Sidebar currentStudio={studio} />}
 
         {/* Workspace content area */}
         <main className="flex-1 overflow-y-auto bg-background">

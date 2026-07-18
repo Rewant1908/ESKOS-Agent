@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { 
@@ -8,8 +8,9 @@ import {
   Layers, ScatterChart, Shield, SearchCode, GitBranch, AlertCircle,
   MessageSquare, Cpu, Workflow, Wrench, Terminal, BrainCircuit,
   Activity, CircleDollarSign, ListChecks, ClipboardCheck, History,
-  FileBadge, Users, Key
+  FileBadge, Users, Key, ChevronLeft, ChevronRight, Pin
 } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 
 interface SidebarProps {
   currentStudio: string;
@@ -73,36 +74,77 @@ const MODULES_MAP: Record<string, NavItem[]> = {
 
 export default function Sidebar({ currentStudio }: SidebarProps) {
   const pathname = usePathname();
+  const [isCollapsed, setIsCollapsed] = useState(false);
   const modules = MODULES_MAP[currentStudio] || [];
 
+  if (modules.length === 0) {
+    return null; // Don't render sidebar if no module mappings exist (e.g. for landing or home views)
+  }
+
   return (
-    <aside className="w-64 bg-card border-r border-border flex flex-col h-full select-none">
-      {/* Sidebar Navigation */}
-      <div className="flex-1 overflow-y-auto py-4 px-3 space-y-1">
-        <div className="px-3 mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-          Studio Navigation
-        </div>
+    <motion.aside
+      animate={{ width: isCollapsed ? 68 : 256 }}
+      transition={{ duration: 0.2, ease: "easeInOut" }}
+      className="bg-card/30 border-r border-border/80 flex flex-col h-full select-none relative z-20 glass-panel"
+    >
+      {/* Scrollable navigation container */}
+      <div className="flex-1 overflow-y-auto py-5 px-3 space-y-1.5 scrollbar-thin">
+        {!isCollapsed && (
+          <div className="px-3 mb-2 text-[9px] font-bold uppercase tracking-widest text-slate-500 font-mono flex items-center space-x-1">
+            <Pin className="w-2.5 h-2.5" />
+            <span>Studio Modules</span>
+          </div>
+        )}
+
         {modules.map((item) => {
           const Icon = item.icon;
           const href = `/${currentStudio}/${item.id}`;
           const isActive = pathname === href;
 
           return (
-            <Link
-              key={item.id}
-              href={href}
-              className={`flex items-center space-x-3 px-3 h-10 rounded-md transition-all text-xs font-medium ${
-                isActive
-                  ? "bg-muted text-foreground font-semibold shadow-sm border border-border"
-                  : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
-              }`}
-            >
-              <Icon className="w-4 h-4" />
-              <span>{item.name}</span>
+            <Link key={item.id} href={href} className="relative block group">
+              <div
+                className={`flex items-center space-x-3 px-3 h-10 rounded-lg transition-all text-xs font-semibold font-sans relative border ${
+                  isActive
+                    ? "bg-muted/65 border-border/80 text-primary-foreground font-bold"
+                    : "text-slate-400 border-transparent hover:text-slate-200 hover:bg-muted/20"
+                }`}
+              >
+                <Icon className={`w-4 h-4 shrink-0 transition-transform ${isActive ? "text-primary scale-110" : "text-slate-500 group-hover:scale-105"}`} />
+                
+                <AnimatePresence initial={false}>
+                  {!isCollapsed && (
+                    <motion.span
+                      initial={{ opacity: 0, x: -5 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      exit={{ opacity: 0, x: -5 }}
+                      transition={{ duration: 0.15 }}
+                      className="truncate"
+                    >
+                      {item.name}
+                    </motion.span>
+                  )}
+                </AnimatePresence>
+
+                {/* active status indicator dot on collapsed mode */}
+                {isActive && isCollapsed && (
+                  <div className="absolute right-2 w-1.5 h-1.5 rounded-full bg-primary" />
+                )}
+              </div>
             </Link>
           );
         })}
       </div>
-    </aside>
+
+      {/* Collapse controls at footer */}
+      <div className="p-3 border-t border-border/40 flex justify-end">
+        <button
+          onClick={() => setIsCollapsed(!isCollapsed)}
+          className="p-1.5 bg-muted/40 border border-border/80 rounded-lg hover:border-slate-700/60 text-muted-foreground hover:text-slate-200 transition-all cursor-pointer"
+        >
+          {isCollapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
+        </button>
+      </div>
+    </motion.aside>
   );
 }

@@ -33,6 +33,7 @@ import ROIView from "@/components/studios/executive/ROIView";
 import CoverageView from "@/components/studios/executive/CoverageView";
 import TenantConfigView from "@/components/studios/admin/TenantConfigView";
 import ApiKeysView from "@/components/studios/admin/ApiKeysView";
+import HomeView from "@/components/studios/home/HomeView";
 import FallbackView from "@/components/studios/FallbackView";
 
 interface PageProps {
@@ -155,6 +156,15 @@ export default async function Page({ params }: PageProps) {
         return <TenantConfigView />;
       case "api-keys":
         return <ApiKeysView />;
+      default:
+        notFound();
+    }
+  }
+
+  if (studio === "home") {
+    switch (module) {
+      case "dashboard":
+        return <HomeView />;
       default:
         notFound();
     }

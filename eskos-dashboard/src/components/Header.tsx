@@ -2,6 +2,7 @@
 
 import React from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { 
   Database, 
   Cpu, 
@@ -9,62 +10,88 @@ import {
   TrendingUp, 
   Eye, 
   BarChart3, 
-  Settings2 
+  Settings2,
+  Atom
 } from "lucide-react";
+import CommandPalette from "./CommandPalette";
+import NotificationsPanel from "./NotificationsPanel";
+import UserProfile from "./UserProfile";
 
 interface HeaderProps {
   currentStudio: string;
 }
 
 const STUDIOS = [
-  { id: "knowledge", name: "Knowledge Studio", icon: Database, href: "/knowledge/dashboard" },
+  { id: "knowledge", name: "Knowledge", icon: Database, href: "/knowledge/dashboard" },
   { id: "agent", name: "Agent Studio", icon: Cpu, href: "/agent/chat" },
-  { id: "governance", name: "Governance Studio", icon: ShieldAlert, href: "/governance/review-queue" },
-  { id: "marketing", name: "Marketing Studio", icon: TrendingUp, href: "/marketing/seo" },
-  { id: "observability", name: "Observability Studio", icon: Eye, href: "/observability/health" },
-  { id: "executive", name: "Executive Studio", icon: BarChart3, href: "/executive/roi" },
-  { id: "admin", name: "Administration Studio", icon: Settings2, href: "/admin/tenant-config" },
+  { id: "governance", name: "Governance", icon: ShieldAlert, href: "/governance/review-queue" },
+  { id: "marketing", name: "Marketing", icon: TrendingUp, href: "/marketing/seo" },
+  { id: "observability", name: "Observe", icon: Eye, href: "/observability/health" },
+  { id: "executive", name: "Executive", icon: BarChart3, href: "/executive/roi" },
+  { id: "admin", name: "Admin", icon: Settings2, href: "/admin/tenant-config" },
 ];
 
 export default function Header({ currentStudio }: HeaderProps) {
+  const pathname = usePathname();
+
+  // Determine active state for links
+  const getIsActive = (studioId: string) => {
+    return currentStudio === studioId;
+  };
+
   return (
-    <header className="flex items-center justify-between px-6 h-14 bg-card border-b border-border select-none z-10">
-      {/* Brand Logo */}
-      <div className="flex items-center space-x-3">
-        <div className="flex items-center justify-center w-8 h-8 rounded-md bg-primary text-primary-foreground font-bold text-lg tracking-wider">
-          EK
-        </div>
-        <span className="font-semibold text-sm tracking-widest text-slate-200">
-          ESKOS <span className="text-muted-foreground font-normal text-xs ml-1">v2.0</span>
-        </span>
+    <header className="flex items-center justify-between px-6 h-14 bg-card/40 backdrop-blur-md border-b border-border/80 select-none z-30 relative glass-panel">
+      {/* Brand Logo & Portal link */}
+      <div className="flex items-center space-x-6">
+        <Link href="/" className="flex items-center space-x-2.5 group cursor-pointer">
+          <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-gradient-to-tr from-primary to-cyan-500 text-white font-bold text-lg shadow-[0_0_15px_rgba(59,130,246,0.3)] transition-all group-hover:shadow-[0_0_20px_rgba(59,130,246,0.5)]">
+            <Atom className="w-5 h-5 animate-[spin_6s_linear_infinite]" />
+          </div>
+          <div className="flex flex-col">
+            <span className="font-bold text-sm tracking-widest text-slate-100 uppercase font-sans">
+              ESKOS
+            </span>
+            <span className="text-[8px] text-muted-foreground font-mono leading-none tracking-widest uppercase mt-0.5">
+              Knowledge Core v2.0
+            </span>
+          </div>
+        </Link>
+      </div>
+
+      {/* Global Command Center search trigger in center */}
+      <div className="hidden lg:flex flex-1 justify-center max-w-sm px-6">
+        <CommandPalette />
       </div>
 
       {/* Studios Switcher Tabs */}
-      <nav className="flex items-center h-full space-x-1">
+      <nav className="hidden xl:flex items-center h-full space-x-1.5 font-sans">
         {STUDIOS.map((studio) => {
           const Icon = studio.icon;
-          const isActive = currentStudio === studio.id;
+          const isActive = getIsActive(studio.id);
           return (
             <Link
               key={studio.id}
               href={studio.href}
-              className={`flex items-center space-x-2 px-3 h-9 rounded-md transition-all text-xs font-medium ${
+              className={`flex items-center space-x-2 px-3.5 h-8.5 rounded-lg transition-all text-xs font-semibold select-none border ${
                 isActive
-                  ? "bg-primary text-primary-foreground font-semibold shadow-sm"
-                  : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                  ? "bg-primary border-primary text-white shadow-lg shadow-primary/20 font-bold"
+                  : "text-muted-foreground border-transparent hover:text-slate-200 hover:bg-muted/30"
               }`}
             >
-              <Icon className="w-4 h-4" />
-              <span className="hidden xl:inline">{studio.name}</span>
+              <Icon className="w-3.5 h-3.5" />
+              <span>{studio.name}</span>
             </Link>
           );
         })}
       </nav>
 
-      {/* Global Notifications/Profile Placeholder */}
-      <div className="flex items-center space-x-4">
-        <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-        <span className="text-xs text-muted-foreground font-mono">NODE_UPTIME: 18h</span>
+      {/* Right control utilities */}
+      <div className="flex items-center space-x-3.5">
+        {/* Notifications */}
+        <NotificationsPanel />
+
+        {/* Workspace Selector dropdown */}
+        <UserProfile />
       </div>
     </header>
   );

@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Users, Server, Zap, CheckCircle2 } from "lucide-react";
+import { Users, Server, Zap, CheckCircle2, Shield } from "lucide-react";
 
 export default function Footer() {
   const [tenant, setTenant] = useState("goel-scientific");
@@ -35,35 +35,37 @@ export default function Footer() {
   }, []);
 
   return (
-    <footer className="flex items-center justify-between px-6 h-10 bg-card border-t border-border select-none z-10 text-xs text-muted-foreground font-mono">
+    <footer className="flex items-center justify-between px-6 h-10 bg-card/35 backdrop-blur-md border-t border-border/80 select-none z-10 text-[10px] text-muted-foreground font-mono glass-panel">
       {/* Tenant Context Selector */}
       <div className="flex items-center space-x-3">
-        <Users className="w-3.5 h-3.5 text-primary" />
-        <span className="text-[10px] uppercase font-bold tracking-wider text-slate-400 font-sans">Tenant Partition:</span>
-        <select
-          value={tenant}
-          onChange={handleTenantChange}
-          className="bg-transparent text-slate-200 border-none outline-none focus:ring-0 cursor-pointer font-semibold text-xs py-0.5 rounded font-sans"
-        >
-          <option value="goel-scientific" className="bg-card text-foreground">goel-scientific</option>
-          <option value="borosil-scientific" className="bg-card text-foreground">borosil-scientific</option>
-          <option value="shared" className="bg-card text-foreground">shared-tenant</option>
-        </select>
+        <Users className="w-3.5 h-3.5 text-primary shrink-0" />
+        <span className="text-[9px] uppercase font-bold tracking-wider text-slate-400 font-sans">Tenant Partition:</span>
+        <div className="relative">
+          <select
+            value={tenant}
+            onChange={handleTenantChange}
+            className="bg-transparent text-slate-200 border-none outline-none focus:ring-0 cursor-pointer font-bold py-0.5 rounded font-sans pr-1"
+          >
+            <option value="goel-scientific" className="bg-popover text-foreground">goel-scientific</option>
+            <option value="borosil-scientific" className="bg-popover text-foreground">borosil-scientific</option>
+            <option value="shared" className="bg-popover text-foreground">shared-tenant</option>
+          </select>
+        </div>
       </div>
 
       {/* Operational Indicators */}
-      <div className="flex items-center space-x-6">
+      <div className="hidden md:flex items-center space-x-6 text-[9px] tracking-wider uppercase font-semibold font-sans">
         <div className="flex items-center space-x-2">
-          <Server className="w-3.5 h-3.5 text-emerald-500" />
-          <span>Kong Gateway: <span className="text-slate-200 font-semibold">online</span></span>
+          <Server className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+          <span className="text-slate-400">Gateway: <span className="text-emerald-400 font-bold font-mono">ONLINE</span></span>
         </div>
         <div className="flex items-center space-x-2">
-          <Zap className="w-3.5 h-3.5 text-primary" />
-          <span>Cache Hit: <span className="text-slate-200 font-semibold">{cacheHitRate}%</span></span>
+          <Zap className="w-3.5 h-3.5 text-primary shrink-0" />
+          <span className="text-slate-400">Cache Hit: <span className="text-primary font-bold font-mono">{cacheHitRate}%</span></span>
         </div>
         <div className="flex items-center space-x-2">
-          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
-          <span>Fabric Services: <span className="text-slate-200 font-semibold">healthy</span></span>
+          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+          <span className="text-slate-400">Services: <span className="text-emerald-400 font-bold font-mono">HEALTHY</span></span>
         </div>
       </div>
     </footer>
