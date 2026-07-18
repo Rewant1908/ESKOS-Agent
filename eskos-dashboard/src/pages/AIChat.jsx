@@ -53,7 +53,10 @@ function ChatContent() {
         }),
       });
 
-      if (!res.ok) throw new Error('API Error');
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData.detail || errData.error || 'Server returned an error');
+      }
 
       const data = await res.json();
       
@@ -72,7 +75,7 @@ function ChatContent() {
       console.error("Chat error", err);
       setMessages(prev => [
         ...prev.filter(m => !m.loading),
-        { role: 'assistant', content: '❌ Sorry, I encountered an error connecting to the agent. Please verify your VITE_KONG_URL.', citations: [] },
+        { role: 'assistant', content: `❌ Error: ${err.message}`, citations: [] },
       ]);
     }
     setLoading(false);
