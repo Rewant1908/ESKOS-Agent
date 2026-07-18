@@ -12,9 +12,9 @@ interface ApiKeyItem {
 }
 
 const SEED_KEYS: ApiKeyItem[] = [
-  { name: "Kong Gateway Admin Access", keyPrefix: "eskos-gov-a721...", scope: "read-write", status: "ACTIVE", created: "2026-05-14" },
-  { name: "Qdrant Vector Cluster Agent", keyPrefix: "qdr-cls-bc81...", scope: "read-only", status: "ACTIVE", created: "2026-06-02" },
-  { name: "Neo4j Relation Manager", keyPrefix: "n4j-rel-f421...", scope: "read-write", status: "ACTIVE", created: "2026-06-18" }
+  { name: "Kong Gateway Admin Access", keyPrefix: "eskos-gov-demo...", scope: "read-write", status: "ACTIVE", created: "2026-05-14" },
+  { name: "Qdrant Vector Cluster Agent", keyPrefix: "qdr-cls-demo...", scope: "read-only", status: "ACTIVE", created: "2026-06-02" },
+  { name: "Neo4j Relation Manager", keyPrefix: "n4j-rel-demo...", scope: "read-write", status: "ACTIVE", created: "2026-06-18" }
 ];
 
 export default function ApiKeysView() {
@@ -23,7 +23,7 @@ export default function ApiKeysView() {
 
   const handleCopy = (idx: number) => {
     setCopiedIdx(idx);
-    navigator.clipboard.writeText("eskos-gov-a721bf7ac1efcc463820ee8231a65e3307f2feec45fa555c");
+    navigator.clipboard.writeText("eskos-gov-demo-0000-not-a-real-key");
     setTimeout(() => setCopiedIdx(null), 1000);
   };
 
