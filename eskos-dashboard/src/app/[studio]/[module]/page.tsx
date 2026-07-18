@@ -27,6 +27,8 @@ import ComplianceView from "@/components/studios/governance/ComplianceView";
 import SEOView from "@/components/studios/marketing/SEOView";
 import GEOView from "@/components/studios/marketing/GEOView";
 import AEOView from "@/components/studios/marketing/AEOView";
+import HealthView from "@/components/studios/observability/HealthView";
+import RetrievalView from "@/components/studios/observability/RetrievalView";
 import FallbackView from "@/components/studios/FallbackView";
 
 interface PageProps {
@@ -116,6 +118,17 @@ export default async function Page({ params }: PageProps) {
         return <GEOView />;
       case "aeo":
         return <AEOView />;
+      default:
+        notFound();
+    }
+  }
+
+  if (studio === "observability") {
+    switch (module) {
+      case "health":
+        return <HealthView />;
+      case "retrieval":
+        return <RetrievalView />;
       default:
         notFound();
     }
