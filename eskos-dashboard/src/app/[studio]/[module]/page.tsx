@@ -29,6 +29,8 @@ import GEOView from "@/components/studios/marketing/GEOView";
 import AEOView from "@/components/studios/marketing/AEOView";
 import HealthView from "@/components/studios/observability/HealthView";
 import RetrievalView from "@/components/studios/observability/RetrievalView";
+import ROIView from "@/components/studios/executive/ROIView";
+import CoverageView from "@/components/studios/executive/CoverageView";
 import FallbackView from "@/components/studios/FallbackView";
 
 interface PageProps {
@@ -129,6 +131,17 @@ export default async function Page({ params }: PageProps) {
         return <HealthView />;
       case "retrieval":
         return <RetrievalView />;
+      default:
+        notFound();
+    }
+  }
+
+  if (studio === "executive") {
+    switch (module) {
+      case "roi":
+        return <ROIView />;
+      case "coverage":
+        return <CoverageView />;
       default:
         notFound();
     }
