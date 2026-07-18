@@ -1,6 +1,10 @@
 import express from "express";
 import { runAgentChat } from "./gemini/agentLoop";
 import { resolveOrgId, resolveCallerId } from "./guardrails/orgScope";
+import { ToolRegistry } from "./registries/ToolRegistry";
+import { PromptRegistry } from "./registries/PromptRegistry";
+import { getProjectRules } from "./memory/projectRules";
+import { getPersistentMemory } from "./memory/persistentMemory";
 
 const app = express();
 app.use(express.json({ limit: "1mb" }));
@@ -9,6 +13,7 @@ const PORT = process.env.PORT || 8091;
 
 app.get("/healthz", (_req, res) => res.json({ status: "ok" }));
 
+// ── Agent Chat ─────────────────────────────────────────────────────────────
 app.post("/api/v1/agent/chat", async (req, res) => {
   const { message, session_id } = req.body || {};
   const actualSessionId = session_id || require('crypto').randomUUID();
@@ -32,10 +37,75 @@ app.post("/api/v1/agent/chat", async (req, res) => {
       dropped_context_chunks: result.droppedContextChunks,
       blocked_input: result.blockedInput,
       org_id: orgId,
+      trace: result.trace,
+      cost: result.cost,
     });
   } catch (err: any) {
     console.error("[agent-runtime] chat error:", err);
     res.status(500).json({ error: "agent execution failed", detail: err.message });
+  }
+});
+
+// ── Tool Registry ──────────────────────────────────────────────────────────
+app.get("/api/v1/agent/tools", (_req, res) => {
+  try {
+    const tools = ToolRegistry.getTools();
+    res.json({ status: "success", tools });
+  } catch (err: any) {
+    res.status(500).json({ error: "failed to retrieve tools", detail: err.message });
+  }
+});
+
+app.post("/api/v1/agent/tools/toggle", (req, res) => {
+  const { name, active } = req.body || {};
+  if (!name || typeof active !== "boolean") {
+    return res.status(400).json({ error: "name (string) and active (boolean) are required" });
+  }
+  try {
+    const status = ToolRegistry.toggleTool(name, active);
+    res.json({ status: "success", tool: name, active: status });
+  } catch (err: any) {
+    res.status(500).json({ error: "failed to toggle tool", detail: err.message });
+  }
+});
+
+// ── Prompt Registry ────────────────────────────────────────────────────────
+app.get("/api/v1/agent/prompts", (_req, res) => {
+  try {
+    const prompts = PromptRegistry.getPrompts();
+    res.json({ status: "success", prompts });
+  } catch (err: any) {
+    res.status(500).json({ error: "failed to retrieve prompts", detail: err.message });
+  }
+});
+
+app.post("/api/v1/agent/prompts", (req, res) => {
+  const { id, instruction } = req.body || {};
+  if (!id || !instruction || typeof instruction !== "string") {
+    return res.status(400).json({ error: "id (string) and instruction (string) are required" });
+  }
+  try {
+    PromptRegistry.updatePrompt(id, instruction);
+    res.json({ status: "success", updated_prompt_id: id });
+  } catch (err: any) {
+    res.status(500).json({ error: "failed to update prompt", detail: err.message });
+  }
+});
+
+// ── Memory and Rules Context (For UI Inspector) ────────────────────────────
+app.get("/api/v1/agent/memory", (req, res) => {
+  const orgId = resolveOrgId(req);
+  try {
+    const projectRules = getProjectRules();
+    const persistentMemory = getPersistentMemory(orgId);
+    res.json({
+      status: "success",
+      org_id: orgId,
+      project_rules: projectRules || "No project rules configured.",
+      persistent_memory: persistentMemory || "No persistent memories logged.",
+    });
+  } catch (err: any) {
+    res.status(500).json({ error: "failed to retrieve memory details", detail: err.message });
   }
 });
 

@@ -12,6 +12,13 @@ import SearchView from "@/components/studios/knowledge/SearchView";
 import VersionView from "@/components/studios/knowledge/VersionView";
 import GapView from "@/components/studios/knowledge/GapView";
 import ChatView from "@/components/studios/agent/ChatView";
+import PlannerView from "@/components/studios/agent/PlannerView";
+import WorkflowBuilderView from "@/components/studios/agent/WorkflowBuilderView";
+import ToolRegistryView from "@/components/studios/agent/ToolRegistryView";
+import PromptRegistryView from "@/components/studios/agent/PromptRegistryView";
+import MemoryInspectorView from "@/components/studios/agent/MemoryInspectorView";
+import AgentMonitoringView from "@/components/studios/agent/AgentMonitoringView";
+import CostAnalyticsView from "@/components/studios/agent/CostAnalyticsView";
 import FallbackView from "@/components/studios/FallbackView";
 
 interface PageProps {
@@ -57,8 +64,22 @@ export default async function Page({ params }: PageProps) {
     switch (module) {
       case "chat":
         return <ChatView />;
+      case "planner":
+        return <PlannerView />;
+      case "workflows":
+        return <WorkflowBuilderView />;
+      case "tools":
+        return <ToolRegistryView />;
+      case "prompts":
+        return <PromptRegistryView />;
+      case "memory":
+        return <MemoryInspectorView />;
+      case "monitoring":
+        return <AgentMonitoringView />;
+      case "cost-analytics":
+        return <CostAnalyticsView />;
       default:
-        return <FallbackView studio={studio} module={module} />;
+        notFound();
     }
   }
 

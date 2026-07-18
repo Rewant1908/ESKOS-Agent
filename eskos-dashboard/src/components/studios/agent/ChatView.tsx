@@ -72,10 +72,12 @@ export default function ChatView() {
 
       const answer = data.reply || "I was unable to generate a response. Please try again.";
       const citations = data.tool_calls ? data.tool_calls.map((t: any) => t.name || t) : [];
+      const trace = data.trace || [];
+      const cost = data.cost || undefined;
 
       setMessages((prev) => [
         ...prev.filter((m) => !m.loading),
-        { role: "assistant", content: answer, citations },
+        { role: "assistant", content: answer, citations, trace, cost },
       ]);
     } catch (err: any) {
       console.error("Chat error", err);
