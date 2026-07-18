@@ -116,6 +116,13 @@ services:
         protocols: [http, https]
         strip_path: false
 
+      - name: knowledge-gaps-route
+        paths:
+          - /api/v1/knowledge/gaps
+        methods: [GET, OPTIONS]
+        protocols: [http, https]
+        strip_path: false
+
       - name: knowledge-fabric-health-route
         paths:
           - /healthz
