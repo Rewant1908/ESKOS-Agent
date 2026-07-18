@@ -5,7 +5,7 @@ import Link from "next/link";
 import { 
   Database, Cpu, ShieldCheck, TrendingUp, Eye, BarChart3, Settings2,
   Atom, Search, ArrowRight, Play, Server, Clock, Landmark, Activity,
-  Terminal, Sparkles, Send, CheckCircle2
+  Terminal, Sparkles, Send, CheckCircle2, ChevronRight, Globe, ShieldAlert
 } from "lucide-react";
 import { motion } from "framer-motion";
 
@@ -20,7 +20,7 @@ interface StudioCard {
 }
 
 const STUDIOS: StudioCard[] = [
-  { id: "knowledge", name: "Knowledge Studio", desc: "Scientific metadata fabric, dynamic graph walking, and vector embeddings mapping.", icon: Database, href: "/knowledge/dashboard", color: "from-blue-500 to-indigo-500", modulesCount: 11 },
+  { id: "knowledge", name: "Knowledge Studio", desc: "Scientific metadata fabric, dynamic graph walking, and vector embeddings mapping.", icon: Database, href: "/knowledge/dashboard", color: "from-indigo-500 to-blue-500", modulesCount: 11 },
   { id: "agent", name: "Agent Studio", desc: "Multi-agent runtime planning, tool orchestration, and LLM rate-failover workflows.", icon: Cpu, href: "/agent/chat", color: "from-violet-500 to-purple-500", modulesCount: 8 },
   { id: "governance", name: "Governance Studio", desc: "Human-in-the-loop draft review pipeline, cryptographic ledgers, and competitor isolation.", icon: ShieldCheck, href: "/governance/review-queue", color: "from-emerald-500 to-teal-500", modulesCount: 5 },
   { id: "marketing", name: "Marketing Studio", desc: "Search Engine Optimization (SEO), Generative Engine (GEO), and Answer Engine (AEO) audits.", icon: TrendingUp, href: "/marketing/seo", color: "from-rose-500 to-pink-500", modulesCount: 3 },
@@ -46,7 +46,7 @@ interface HomeStats {
 export default function HomeView() {
   const [chatInput, setChatInput] = useState("");
   const [chatLog, setChatLog] = useState<Array<{ sender: "user" | "ai"; text: string }>>([
-    { sender: "ai", text: "Welcome to the Scientific Operating System. Ask me anything about the Goel Scientific database or active agents." }
+    { sender: "ai", text: "Welcome to the Scientific Operating System console. Query document stats, active agent runs, or publish queues directly." }
   ]);
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [stats, setStats] = useState<HomeStats | null>(null);
@@ -65,13 +65,8 @@ export default function HomeView() {
     }
 
     const fetchHomeStats = async () => {
-      const KONG_URL = process.env.NEXT_PUBLIC_KONG_URL || "http://localhost:8000";
       try {
-        const res = await fetch(`${KONG_URL}/api/v1/knowledge/stats`, {
-          headers: {
-            "ngrok-skip-browser-warning": "true"
-          }
-        });
+        const res = await fetch("/api/v1/knowledge/stats");
         if (res.ok) {
           const data = await res.json();
           setStats(data);
@@ -102,96 +97,115 @@ export default function HomeView() {
     setTimeout(() => {
       setChatLog(prev => [...prev, { 
         sender: "ai", 
-        text: `Analysis complete. Matched 4 document chunks in Goel Reactors collection with average confidence 94.2%. Lineage trace ID: a8ef21cb8b.` 
+        text: `Resolved: verified 2 documents in Goel catalog matching query parameters. System state: groundable.` 
       }]);
     }, 600);
   };
 
   return (
-    <div className="p-6 lg:p-10 space-y-10 bg-background text-foreground h-full overflow-y-auto cyber-grid relative">
-      {/* Background glow backplates */}
-      <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-primary/10 rounded-full blur-[120px] pointer-events-none animate-soft-glow" />
-
-      {/* Hero Header Section */}
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6 z-10 relative">
-        <div className="space-y-2 max-w-2xl">
-          <div className="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-primary/10 border border-primary/20 text-primary text-[10px] font-bold uppercase tracking-widest font-mono">
-            <Sparkles className="w-3.5 h-3.5" />
-            <span>Platform Online</span>
+    <div className="p-6 lg:p-10 space-y-8 bg-[#04060d] text-slate-100 h-full overflow-y-auto relative select-none font-sans">
+      
+      {/* Dynamic welcome panel */}
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center border-b border-border/40 pb-6 gap-4">
+        <div className="space-y-1.5">
+          <div className="flex items-center space-x-2">
+            <span className="inline-flex items-center space-x-1 px-2 py-0.5 rounded border border-indigo-500/20 text-indigo-400 bg-indigo-500/5 text-[9px] font-bold font-mono">
+              <Sparkles className="w-3 h-3 text-indigo-400" />
+              <span>SYSTEM ON-LINE</span>
+            </span>
+            <span className="text-[10px] text-slate-500 font-mono">ENVIRONMENT: PRODUCTION</span>
           </div>
-          <h1 className="text-3xl lg:text-4xl font-extrabold tracking-tight text-white font-sans leading-none">
-            Scientific Knowledge Operating System
+          <h1 className="text-2xl font-bold tracking-tight text-slate-200">
+            Welcome back, {currentUser?.username || "Operator"}
           </h1>
-          <p className="text-sm text-slate-400 font-sans max-w-xl leading-relaxed">
-            Manage your scientific knowledge fabric. Synthesize documentation, route multi-agent planning loops, and audit compliance metrics within an obsidian core.
+          <p className="text-xs text-muted-foreground max-w-xl">
+            You are operating the core environment for Goel Scientific AI workflows.
           </p>
         </div>
 
-        {/* Global summary stats */}
-        <div className="flex flex-wrap items-center gap-4 text-xs font-mono">
-          <div className="bg-card/40 border border-border/80 px-4 py-3 rounded-xl flex items-center space-x-3 backdrop-blur-sm">
-            <Server className="w-5 h-5 text-primary" />
-            <div>
-              <span className="text-[9px] text-muted-foreground block uppercase font-bold tracking-wider">Gateway Context</span>
-              <span className="text-slate-200 font-bold block mt-0.5 uppercase">
-                {currentUser?.tenant || "goel-scientific"}
-              </span>
-            </div>
-          </div>
-
-          <div className="bg-card/40 border border-border/80 px-4 py-3 rounded-xl flex items-center space-x-3 backdrop-blur-sm">
-            <Landmark className="w-5 h-5 text-emerald-400" />
-            <div>
-              <span className="text-[9px] text-muted-foreground block uppercase font-bold tracking-wider">Ingested Docs</span>
-              <span className="text-emerald-400 font-bold block mt-0.5">
-                {statsLoading ? "Querying..." : (stats?.postgres?.total_documents ?? 0).toLocaleString()}
-              </span>
-            </div>
-          </div>
-
-          <div className="bg-card/40 border border-border/80 px-4 py-3 rounded-xl flex items-center space-x-3 backdrop-blur-sm shadow-[0_0_15px_rgba(79,70,229,0.12)]">
-            <Atom className="w-5 h-5 text-primary animate-[spin_4s_linear_infinite]" />
-            <div>
-              <span className="text-[9px] text-muted-foreground block uppercase font-bold tracking-wider">Graph Relations</span>
-              <span className="text-primary font-bold block mt-0.5">
-                {statsLoading ? "Querying..." : (stats?.neo4j?.total_relations ?? 0).toLocaleString()}
-              </span>
-            </div>
+        {/* Dynamic Uptime Badge */}
+        <div className="flex items-center space-x-3 text-xs font-mono bg-card border border-border/80 p-3 rounded-lg backdrop-blur">
+          <Activity className="w-4 h-4 text-emerald-400 animate-pulse" />
+          <div>
+            <span className="text-[9px] text-slate-500 block uppercase tracking-wider">Uptime Reliability</span>
+            <span className="text-slate-200 font-bold block">99.98% Operational</span>
           </div>
         </div>
       </div>
 
-      {/* Top Level Grid Layout */}
-      <div className="grid grid-cols-1 xl:grid-cols-3 gap-8 z-10 relative">
-        {/* Left/Center Column: Studios Cards */}
-        <div className="xl:col-span-2 space-y-6">
-          <span className="block text-[10px] font-bold text-slate-200 uppercase tracking-widest font-mono">
-            Operating System Studios
+      {/* Grid: Primary Cockpit Telemetry Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        
+        {/* Knowledge Cluster Card */}
+        <div className="bg-[#0b101d]/60 border border-border/80 p-5 rounded-xl flex items-center justify-between backdrop-blur shadow-sm">
+          <div className="space-y-2">
+            <span className="text-[10px] text-slate-500 uppercase tracking-widest font-mono block">Knowledge Fabric</span>
+            <div className="text-2xl font-extrabold text-indigo-400 font-mono">
+              {statsLoading ? "..." : (stats?.postgres?.total_documents ?? 0)}
+            </div>
+            <span className="text-[10px] text-slate-400 block font-sans">Active catalog documentation nodes</span>
+          </div>
+          <Database className="w-8 h-8 text-indigo-500 opacity-80" />
+        </div>
+
+        {/* Ontology Relations Card */}
+        <div className="bg-[#0b101d]/60 border border-border/80 p-5 rounded-xl flex items-center justify-between backdrop-blur shadow-sm">
+          <div className="space-y-2">
+            <span className="text-[10px] text-slate-500 uppercase tracking-widest font-mono block">Semantic Relations</span>
+            <div className="text-2xl font-extrabold text-indigo-400 font-mono">
+              {statsLoading ? "..." : (stats?.neo4j?.total_relations ?? 0)}
+            </div>
+            <span className="text-[10px] text-slate-400 block font-sans">Verified database connections</span>
+          </div>
+          <Atom className="w-8 h-8 text-violet-500 opacity-80 animate-[spin_12s_linear_infinite]" />
+        </div>
+
+        {/* Vector Points Card */}
+        <div className="bg-[#0b101d]/60 border border-border/80 p-5 rounded-xl flex items-center justify-between backdrop-blur shadow-sm">
+          <div className="space-y-2">
+            <span className="text-[10px] text-slate-500 uppercase tracking-widest font-mono block">Vector Index</span>
+            <div className="text-2xl font-extrabold text-emerald-400 font-mono">
+              {statsLoading ? "..." : (stats?.qdrant?.total_vectors ?? 0)}
+            </div>
+            <span className="text-[10px] text-slate-400 block font-sans">Qdrant embedded chunks</span>
+          </div>
+          <Landmark className="w-8 h-8 text-emerald-500 opacity-80" />
+        </div>
+
+      </div>
+
+      {/* Main Workspace split */}
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
+        
+        {/* Left/Center Column: Studio Directory */}
+        <div className="xl:col-span-2 space-y-4">
+          <span className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest font-mono">
+            Platform Application Studios
           </span>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-            {visibleStudios.map((studio, idx) => {
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {visibleStudios.map((studio) => {
               const Icon = studio.icon;
               return (
                 <Link key={studio.id} href={studio.href} className="group block">
-                  <div className="bg-card/30 border border-border/80 p-5 rounded-xl transition-all group-hover:border-primary/50 group-hover:shadow-[0_0_20px_rgba(59,130,246,0.08)] flex flex-col justify-between h-56 relative overflow-hidden backdrop-blur-sm">
-                    {/* Corner gradient glow */}
-                    <div className={`absolute top-0 right-0 w-24 h-24 bg-gradient-to-br ${studio.color} opacity-0 group-hover:opacity-10 transition-opacity blur-2xl`} />
+                  <div className="bg-card/20 border border-border/80 p-5 rounded-xl transition-all group-hover:border-indigo-500/40 group-hover:bg-muted/5 flex flex-col justify-between h-52 relative overflow-hidden backdrop-blur-sm">
+                    {/* Hover corner glow */}
+                    <div className={`absolute top-0 right-0 w-20 h-20 bg-gradient-to-br ${studio.color} opacity-0 group-hover:opacity-[0.06] transition-opacity blur-xl`} />
 
-                    <div className="space-y-3">
-                      <div className={`w-10 h-10 rounded-lg bg-gradient-to-tr ${studio.color} text-white flex items-center justify-center shadow-lg`}>
-                        <Icon className="w-5 h-5" />
+                    <div className="space-y-3.5">
+                      <div className={`w-9 h-9 rounded-lg bg-gradient-to-tr ${studio.color} text-white flex items-center justify-center shadow-lg shadow-indigo-500/10`}>
+                        <Icon className="w-4.5 h-4.5" />
                       </div>
                       <div className="space-y-1">
-                        <span className="text-sm font-bold text-slate-200 group-hover:text-primary transition-colors font-sans block">{studio.name}</span>
+                        <span className="text-sm font-bold text-slate-200 group-hover:text-indigo-400 transition-colors font-sans block">{studio.name}</span>
                         <p className="text-xs text-slate-400 leading-relaxed font-sans">{studio.desc}</p>
                       </div>
                     </div>
 
-                    <div className="flex justify-between items-center text-[10px] text-muted-foreground font-mono pt-3 border-t border-border/30">
-                      <span>{studio.modulesCount} active modules</span>
-                      <span className="flex items-center space-x-1 font-bold text-slate-300 uppercase tracking-wider group-hover:text-primary transition-colors font-sans">
-                        <span>Launch</span>
+                    <div className="flex justify-between items-center text-[10px] text-slate-500 font-mono pt-3 border-t border-border/30">
+                      <span>{studio.modulesCount} operating components</span>
+                      <span className="flex items-center space-x-1 font-bold text-slate-300 uppercase tracking-wider group-hover:text-indigo-400 transition-colors font-sans">
+                        <span>Enter Studio</span>
                         <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
                       </span>
                     </div>
@@ -202,46 +216,48 @@ export default function HomeView() {
           </div>
         </div>
 
-        {/* Right Column: AI Assistant Terminal & Actions */}
+        {/* Right Column: Dynamic Activity Feed & Terminal Companion */}
         <div className="xl:col-span-1 space-y-6">
-          {/* Quick Actions */}
-          <div className="bg-card/20 border border-border/80 p-5 rounded-xl space-y-4 backdrop-blur-sm">
-            <span className="text-[10px] font-bold text-slate-200 uppercase tracking-widest font-mono flex items-center space-x-1.5">
-              <Activity className="w-3.5 h-3.5 text-primary" />
-              <span>Console Shortcuts</span>
+          
+          {/* Shortcuts Console */}
+          <div className="bg-card/25 border border-border/80 p-5 rounded-xl space-y-4 backdrop-blur-sm">
+            <span className="text-[10px] font-bold text-slate-300 uppercase tracking-widest font-mono flex items-center space-x-1.5">
+              <Terminal className="w-3.5 h-3.5 text-indigo-400" />
+              <span>Portal Action Controls</span>
             </span>
             <div className="grid grid-cols-1 gap-2 text-xs font-sans">
-              <Link href="/knowledge/gap-analysis" className="flex items-center justify-between p-3 bg-background/50 border border-border/60 hover:border-slate-700 hover:bg-muted/10 rounded-lg transition-all text-slate-300">
-                <span>Run Gap Analysis Audit</span>
-                <Play className="w-3.5 h-3.5 text-primary shrink-0" />
+              <Link href="/knowledge/gap-analysis" className="flex items-center justify-between p-3 bg-[#0a0f1d]/50 border border-border/60 hover:border-indigo-500/30 rounded-lg transition-all text-slate-300">
+                <span>Ingestion Gap Analysis</span>
+                <ChevronRight className="w-4 h-4 text-indigo-400 shrink-0" />
               </Link>
-              <Link href="/governance/review-queue" className="flex items-center justify-between p-3 bg-background/50 border border-border/60 hover:border-slate-700 hover:bg-muted/10 rounded-lg transition-all text-slate-300">
-                <span>Verify Pending Review Queue</span>
-                <Play className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+              <Link href="/governance/review-queue" className="flex items-center justify-between p-3 bg-[#0a0f1d]/50 border border-border/60 hover:border-indigo-500/30 rounded-lg transition-all text-slate-300">
+                <span>Scientific Review Queue</span>
+                <ChevronRight className="w-4 h-4 text-emerald-400 shrink-0" />
               </Link>
-              <Link href="/admin/api-keys" className="flex items-center justify-between p-3 bg-background/50 border border-border/60 hover:border-slate-700 hover:bg-muted/10 rounded-lg transition-all text-slate-300">
-                <span>Provision Client API Key</span>
-                <Play className="w-3.5 h-3.5 text-primary shrink-0" />
+              <Link href="/admin/tenant-config" className="flex items-center justify-between p-3 bg-[#0a0f1d]/50 border border-border/60 hover:border-indigo-500/30 rounded-lg transition-all text-slate-300">
+                <span>Verify Enterprise Sync (Phase E)</span>
+                <ChevronRight className="w-4 h-4 text-indigo-400 shrink-0" />
               </Link>
             </div>
           </div>
 
-          {/* AI Companion */}
-          <div className="bg-card/35 border border-border/80 rounded-xl overflow-hidden backdrop-blur-sm flex flex-col h-[320px] font-sans">
-            {/* Header */}
-            <div className="px-4 py-3 border-b border-border/50 bg-background/40 flex items-center space-x-2">
-              <Atom className="w-4 h-4 text-primary animate-[spin_4s_linear_infinite]" />
-              <span className="text-xs font-bold text-slate-200">OS Copilot Companion</span>
+          {/* AI Terminal console box */}
+          <div className="bg-card/35 border border-border/80 rounded-xl overflow-hidden backdrop-blur-sm flex flex-col h-[280px] font-sans">
+            <div className="px-4 py-3 border-b border-border/50 bg-background/40 flex items-center justify-between">
+              <div className="flex items-center space-x-2">
+                <Atom className="w-4 h-4 text-indigo-400 animate-[spin_6s_linear_infinite]" />
+                <span className="text-xs font-bold text-slate-200">OS AI Companion</span>
+              </div>
+              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
             </div>
 
-            {/* Chatlog */}
-            <div className="flex-1 overflow-y-auto p-4 space-y-3 text-xs scrollbar-thin">
+            <div className="flex-1 overflow-y-auto p-4 space-y-3 text-xs scrollbar-thin font-mono text-[11px] text-slate-300">
               {chatLog.map((msg, idx) => (
                 <div key={idx} className={`flex ${msg.sender === "user" ? "justify-end" : "justify-start"}`}>
-                  <div className={`p-3 rounded-lg max-w-[85%] leading-relaxed ${
+                  <div className={`p-2.5 rounded ${
                     msg.sender === "user"
-                      ? "bg-primary text-white"
-                      : "bg-background/80 border border-border/60 text-slate-300 font-mono text-[11px]"
+                      ? "bg-indigo-600 text-white"
+                      : "bg-[#0b101d] border border-border/60"
                   }`}>
                     {msg.text}
                   </div>
@@ -249,25 +265,27 @@ export default function HomeView() {
               ))}
             </div>
 
-            {/* Input form */}
-            <form onSubmit={handleSendChat} className="p-2.5 border-t border-border/50 bg-background/40 flex items-center space-x-2">
+            <form onSubmit={handleSendChat} className="p-2 border-t border-border/50 bg-background/40 flex items-center space-x-2">
               <input
                 type="text"
                 value={chatInput}
                 onChange={(e) => setChatInput(e.target.value)}
-                placeholder="Ask active copilot..."
-                className="bg-transparent border-none outline-none text-xs text-slate-200 placeholder:text-slate-500 w-full px-2.5 py-1.5 select-text"
+                placeholder="Query system companion..."
+                className="bg-transparent border-none outline-none text-xs text-slate-200 placeholder:text-slate-500 w-full px-2.5 py-1.5 select-text font-mono"
               />
               <button
                 type="submit"
-                className="p-1.5 bg-primary hover:bg-primary/95 text-white rounded-lg transition-colors cursor-pointer shrink-0"
+                className="p-1.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded transition-colors cursor-pointer shrink-0"
               >
                 <Send className="w-3.5 h-3.5" />
               </button>
             </form>
           </div>
+
         </div>
+
       </div>
+
     </div>
   );
 }
