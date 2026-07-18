@@ -12,24 +12,31 @@ export default function ClientAuthWrapper({ children }: ClientAuthWrapperProps) 
   const [checking, setChecking] = useState(true);
 
   useEffect(() => {
-    if (typeof window !== "undefined") {
+    const checkSession = async () => {
       try {
-        const saved = localStorage.getItem("eskos_user");
-        if (saved) {
-          setUser(JSON.parse(saved));
+        const res = await fetch("/api/auth/session");
+        const data = await res.json();
+        if (data.user) {
+          setUser(data.user);
+          localStorage.setItem("eskos_user", JSON.stringify(data.user));
+          localStorage.setItem("eskos-active-tenant", data.user.tenant);
+        } else {
+          setUser(null);
+          localStorage.removeItem("eskos_user");
         }
       } catch (e) {
-        console.error("Failed to parse user session", e);
+        console.error("Session check failed", e);
+      } finally {
+        setChecking(false);
       }
-      setChecking(false);
-    }
+    };
+    checkSession();
   }, []);
 
   const handleLogin = (u: { username: string; role: string; tenant: string }) => {
     localStorage.setItem("eskos_user", JSON.stringify(u));
     localStorage.setItem("eskos-active-tenant", u.tenant);
     setUser(u);
-    // Dispatch event to trigger tenant state reload in footer
     window.dispatchEvent(new Event("eskos-tenant-changed"));
   };
 

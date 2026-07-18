@@ -19,6 +19,37 @@ const WORKSPACES: Workspace[] = [
 export default function UserProfile() {
   const [isOpen, setIsOpen] = useState(false);
   const [activeWs, setActiveWs] = useState<Workspace>(WORKSPACES[0]);
+  const [currentUser, setCurrentUser] = useState<any>(null);
+
+  React.useEffect(() => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("eskos_user");
+      if (saved) {
+        try {
+          setCurrentUser(JSON.parse(saved));
+        } catch (e) {
+          console.error(e);
+        }
+      }
+    }
+  }, []);
+
+  const handleLogout = async () => {
+    try {
+      await fetch("/api/auth/logout", { method: "POST" });
+      localStorage.removeItem("eskos_user");
+      localStorage.removeItem("eskos-active-tenant");
+      window.location.reload();
+    } catch (e) {
+      console.error("Logout failed", e);
+    }
+  };
+
+  const getRoleLabel = (role: string) => {
+    if (role === "admin") return "Systems Administrator";
+    if (role === "reviewer") return "Scientific Reviewer";
+    return "Guest Console";
+  };
 
   return (
     <div className="relative select-none font-sans">
@@ -28,9 +59,11 @@ export default function UserProfile() {
         className="flex items-center space-x-2 px-2.5 py-1.5 bg-muted/40 border border-border/80 rounded-lg hover:border-slate-700/60 transition-all cursor-pointer"
       >
         <div className="w-5 h-5 rounded-md bg-gradient-to-tr from-primary to-cyan-400 flex items-center justify-center text-white font-bold text-[10px]">
-          U
+          {(currentUser?.username || "S").slice(0, 1).toUpperCase()}
         </div>
-        <span className="text-xs text-slate-300 font-semibold hidden md:inline">Supervisor Console</span>
+        <span className="text-xs text-slate-300 font-semibold hidden md:inline">
+          {currentUser?.username || "Supervisor Console"}
+        </span>
         <ChevronDown className="w-3.5 h-3.5 text-muted-foreground" />
       </button>
 
@@ -51,11 +84,13 @@ export default function UserProfile() {
               {/* Profile Card */}
               <div className="p-4 border-b border-border/50 bg-background/30 flex items-center space-x-3 text-xs">
                 <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-primary to-cyan-400 flex items-center justify-center text-white font-bold text-sm">
-                  U
+                  {(currentUser?.username || "S").slice(0, 1).toUpperCase()}
                 </div>
                 <div>
-                  <div className="font-bold text-slate-200">Rewant Sharma</div>
-                  <div className="text-[10px] text-muted-foreground font-mono uppercase tracking-wider">Staff Knowledge Engineer</div>
+                  <div className="font-bold text-slate-200">{currentUser?.username || "Supervisor Console"}</div>
+                  <div className="text-[10px] text-muted-foreground font-mono uppercase tracking-wider">
+                    {getRoleLabel(currentUser?.role || "admin")}
+                  </div>
                 </div>
               </div>
 
@@ -98,6 +133,13 @@ export default function UserProfile() {
                 <div className="flex items-center space-x-2.5 px-3 py-2 rounded-lg hover:bg-muted/30 cursor-pointer">
                   <Terminal className="w-4 h-4 text-primary" />
                   <span>Developer Console</span>
+                </div>
+                <div 
+                  onClick={handleLogout}
+                  className="flex items-center space-x-2.5 px-3 py-2 rounded-lg hover:bg-rose-500/10 hover:text-rose-400 cursor-pointer text-slate-400 transition-colors"
+                >
+                  <LogOut className="w-4 h-4 text-rose-500" />
+                  <span>Disconnect Session</span>
                 </div>
               </div>
             </motion.div>

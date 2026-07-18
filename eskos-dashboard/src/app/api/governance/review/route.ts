@@ -1,4 +1,6 @@
 import { NextResponse } from "next/server";
+import { cookies } from "next/headers";
+import { decryptSession } from "@/lib/auth";
 
 export async function POST(request: Request) {
   try {
@@ -13,6 +15,17 @@ export async function POST(request: Request) {
       );
     }
 
+    const cookieStore = await cookies();
+    const sessionCookie = cookieStore.get("eskos_session");
+    let reviewerId = "anonymous-reviewer";
+
+    if (sessionCookie && sessionCookie.value) {
+      const user = decryptSession(sessionCookie.value);
+      if (user && user.username) {
+        reviewerId = user.username;
+      }
+    }
+
     const res = await fetch(`${KONG_URL}/api/v1/governance/review`, {
       method: "POST",
       headers: {
@@ -20,7 +33,10 @@ export async function POST(request: Request) {
         "apikey": GOVERNANCE_API_KEY,
         "ngrok-skip-browser-warning": "true",
       },
-      body: JSON.stringify(body)
+      body: JSON.stringify({
+        ...body,
+        reviewer_id: reviewerId
+      })
     });
 
     if (!res.ok) {

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { 
   Database, Cpu, ShieldCheck, TrendingUp, Eye, BarChart3, Settings2,
@@ -25,7 +25,8 @@ const STUDIOS: StudioCard[] = [
   { id: "governance", name: "Governance Studio", desc: "Human-in-the-loop draft review pipeline, cryptographic ledgers, and competitor isolation.", icon: ShieldCheck, href: "/governance/review-queue", color: "from-emerald-500 to-teal-500", modulesCount: 5 },
   { id: "marketing", name: "Marketing Studio", desc: "Search Engine Optimization (SEO), Generative Engine (GEO), and Answer Engine (AEO) audits.", icon: TrendingUp, href: "/marketing/seo", color: "from-rose-500 to-pink-500", modulesCount: 3 },
   { id: "observability", name: "Observability Studio", desc: "RAG latency distributions, cache metrics, and live DB node health status monitoring.", icon: Eye, href: "/observability/health", color: "from-amber-500 to-orange-500", modulesCount: 2 },
-  { id: "executive", name: "Executive Studio", desc: "Financial ROI analytics, ticketing deflection ledgers, and document category heatmaps.", icon: BarChart3, href: "/executive/roi", color: "from-cyan-500 to-blue-500", modulesCount: 2 }
+  { id: "executive", name: "Executive Studio", desc: "Financial ROI analytics, ticketing deflection ledgers, and document category heatmaps.", icon: BarChart3, href: "/executive/roi", color: "from-cyan-500 to-blue-500", modulesCount: 2 },
+  { id: "admin", name: "Administration Studio", desc: "Configure global tenant scopes, cryptographically secure API keys, and access controls.", icon: Settings2, href: "/admin/tenant-config", color: "from-slate-500 to-zinc-500", modulesCount: 2 }
 ];
 
 export default function HomeView() {
@@ -33,6 +34,27 @@ export default function HomeView() {
   const [chatLog, setChatLog] = useState<Array<{ sender: "user" | "ai"; text: string }>>([
     { sender: "ai", text: "Welcome to the Scientific Operating System. Ask me anything about the Goel Scientific database or active agents." }
   ]);
+  const [currentUser, setCurrentUser] = useState<any>(null);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("eskos_user");
+      if (saved) {
+        try {
+          setCurrentUser(JSON.parse(saved));
+        } catch (e) {
+          console.error(e);
+        }
+      }
+    }
+  }, []);
+
+  const visibleStudios = STUDIOS.filter((studio) => {
+    if (studio.id === "admin") {
+      return currentUser?.role === "admin";
+    }
+    return true;
+  });
 
   const handleSendChat = (e: React.FormEvent) => {
     e.preventDefault();
@@ -105,7 +127,7 @@ export default function HomeView() {
           </span>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-            {STUDIOS.map((studio, idx) => {
+            {visibleStudios.map((studio, idx) => {
               const Icon = studio.icon;
               return (
                 <Link key={studio.id} href={studio.href} className="group block">

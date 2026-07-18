@@ -16,8 +16,9 @@ const DATASETS = [
 
 export default function LoginPage({ onLogin }: LoginPageProps) {
   const [username, setUsername] = useState("Supervisor Console");
-  const [role, setRole] = useState("supervisor");
-  const [tenant, setTenant] = useState("goel-scientific");
+  const [password, setPassword] = useState("password123");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [showPreloader, setShowPreloader] = useState(true);
 
   // Preloader duration
@@ -28,9 +29,26 @@ export default function LoginPage({ onLogin }: LoginPageProps) {
     return () => clearTimeout(timer);
   }, []);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    onLogin({ username, role, tenant });
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username, password })
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || "Login failed.");
+      }
+      onLogin(data.user);
+    } catch (err: any) {
+      setError(err.message || "Invalid credentials.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -78,10 +96,16 @@ export default function LoginPage({ onLogin }: LoginPageProps) {
                 <span className="font-bold text-sm tracking-widest text-slate-200 uppercase">ESKOS</span>
               </div>
               <h2 className="text-xl font-bold text-slate-100">Sign in to Scientific OS</h2>
-              <p className="text-xs text-muted-foreground">Select your administrative tenant partition and context role to launch workspace.</p>
+              <p className="text-xs text-muted-foreground">Log in with your database identity and security password.</p>
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-4 text-xs">
+              {error && (
+                <div className="p-3 rounded-lg bg-rose-500/10 border border-rose-500/20 text-rose-400 text-xs font-mono">
+                  ⚠️ {error}
+                </div>
+              )}
+
               <div className="kt-form-group">
                 <label>User Console Identity</label>
                 <input
@@ -89,48 +113,33 @@ export default function LoginPage({ onLogin }: LoginPageProps) {
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
                   className="w-full"
+                  required
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div className="kt-form-group">
-                  <label>Context Role</label>
-                  <select
-                    value={role}
-                    onChange={(e) => setRole(e.target.value)}
-                    className="w-full"
-                  >
-                    <option value="supervisor">Supervisor</option>
-                    <option value="compliance">Compliance Auditor</option>
-                    <option value="guest">Guest Scientist</option>
-                  </select>
-                </div>
-
-                <div className="kt-form-group">
-                  <label>Tenant Partition</label>
-                  <select
-                    value={tenant}
-                    onChange={(e) => setTenant(e.target.value)}
-                    className="w-full font-mono"
-                  >
-                    <option value="goel-scientific">goel-scientific</option>
-                    <option value="borosil-scientific">borosil-scientific</option>
-                    <option value="shared">shared-tenant</option>
-                  </select>
-                </div>
+              <div className="kt-form-group">
+                <label>Security Password</label>
+                <input
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="w-full font-mono"
+                  required
+                />
               </div>
 
               <button
                 type="submit"
+                disabled={loading}
                 className="w-full kt-btn kt-btn-primary flex items-center justify-center space-x-2 mt-2"
               >
-                <span>Launch Enterprise Workspace</span>
+                <span>{loading ? "Authenticating..." : "Launch Enterprise Workspace"}</span>
                 <ArrowRight className="w-4 h-4" />
               </button>
             </form>
 
             <div className="flex justify-between items-center text-[10px] text-muted-foreground font-mono border-t border-border/30 pt-4">
-              <span>Security Auth: Kong HMAC</span>
+              <span>Security Auth: PostgreSQL + AES-256</span>
               <span>v2.0-Obsidian</span>
             </div>
           </div>

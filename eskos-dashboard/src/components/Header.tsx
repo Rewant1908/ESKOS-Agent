@@ -32,12 +32,31 @@ const STUDIOS = [
 ];
 
 export default function Header({ currentStudio }: HeaderProps) {
-  const pathname = usePathname();
-
-  // Determine active state for links
   const getIsActive = (studioId: string) => {
     return currentStudio === studioId;
   };
+
+  const [currentUser, setCurrentUser] = React.useState<any>(null);
+
+  React.useEffect(() => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("eskos_user");
+      if (saved) {
+        try {
+          setCurrentUser(JSON.parse(saved));
+        } catch (e) {
+          console.error(e);
+        }
+      }
+    }
+  }, []);
+
+  const visibleStudios = STUDIOS.filter((studio) => {
+    if (studio.id === "admin") {
+      return currentUser?.role === "admin";
+    }
+    return true;
+  });
 
   return (
     <header className="flex items-center justify-between px-6 h-14 bg-card/40 backdrop-blur-md border-b border-border/80 select-none z-30 relative glass-panel">
@@ -65,7 +84,7 @@ export default function Header({ currentStudio }: HeaderProps) {
 
       {/* Studios Switcher Tabs */}
       <nav className="hidden xl:flex items-center h-full space-x-1.5 font-sans">
-        {STUDIOS.map((studio) => {
+        {visibleStudios.map((studio) => {
           const Icon = studio.icon;
           const isActive = getIsActive(studio.id);
           return (
