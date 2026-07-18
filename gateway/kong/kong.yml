@@ -133,6 +133,17 @@ services:
   # ── Trust Score Service ───────────────────────────────────────────────
   - name: trust-score-service
     url: http://trust-score:8080
+    plugins:
+      - name: cors
+        config:
+          origins:
+            - "http://localhost:3000"
+            - "https://*.ngrok-free.app"
+            - "https://*.ngrok-free.dev"
+          methods: [GET, POST, OPTIONS]
+          headers: [Accept, Content-Type, ngrok-skip-browser-warning]
+          credentials: false
+          max_age: 3600
     routes:
       - name: trust-score-route
         paths:
