@@ -19,6 +19,11 @@ import PromptRegistryView from "@/components/studios/agent/PromptRegistryView";
 import MemoryInspectorView from "@/components/studios/agent/MemoryInspectorView";
 import AgentMonitoringView from "@/components/studios/agent/AgentMonitoringView";
 import CostAnalyticsView from "@/components/studios/agent/CostAnalyticsView";
+import ReviewQueueView from "@/components/studios/governance/ReviewQueueView";
+import ProvenanceView from "@/components/studios/governance/ProvenanceView";
+import CitationsView from "@/components/studios/governance/CitationsView";
+import AuditTrailView from "@/components/studios/governance/AuditTrailView";
+import ComplianceView from "@/components/studios/governance/ComplianceView";
 import FallbackView from "@/components/studios/FallbackView";
 
 interface PageProps {
@@ -78,6 +83,23 @@ export default async function Page({ params }: PageProps) {
         return <AgentMonitoringView />;
       case "cost-analytics":
         return <CostAnalyticsView />;
+      default:
+        notFound();
+    }
+  }
+
+  if (studio === "governance") {
+    switch (module) {
+      case "review-queue":
+        return <ReviewQueueView />;
+      case "provenance":
+        return <ProvenanceView />;
+      case "citations":
+        return <CitationsView />;
+      case "audit-trail":
+        return <AuditTrailView />;
+      case "compliance":
+        return <ComplianceView />;
       default:
         notFound();
     }
