@@ -11,33 +11,53 @@ interface QueryPerformanceEntry {
   timestamp: string;
 }
 
-const SEED_LOGS: QueryPerformanceEntry[] = [
-  { query: "high-temperature pressure reactors", latencyMs: 28, confidenceScore: 92.5, sourceDocId: "doc-goel-01", timestamp: new Date().toISOString() },
-  { query: "quartz distillation columns specification", latencyMs: 42, confidenceScore: 88.0, sourceDocId: "doc-goel-02", timestamp: new Date(Date.now() - 300000).toISOString() },
-  { query: "heat-resistant borosilicate glass composition", latencyMs: 35, confidenceScore: 94.2, sourceDocId: "doc-goel-02", timestamp: new Date(Date.now() - 600000).toISOString() }
-];
+interface QueryPerformanceEntry {
+  query: string;
+  latencyMs: number;
+  confidenceScore: number;
+  sourceDocId: string;
+  timestamp: string;
+}
 
 export default function RetrievalView() {
-  const [logs, setLogs] = useState<QueryPerformanceEntry[]>(SEED_LOGS);
-  const [loading, setLoading] = useState(false);
+  const [logs, setLogs] = useState<QueryPerformanceEntry[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const handleRefresh = () => {
-    setLoading(true);
-    setTimeout(() => {
-      const newEntry: QueryPerformanceEntry = {
-        query: "borosilicate glass mechanical properties",
-        latencyMs: Math.floor(Math.random() * 30) + 20,
-        confidenceScore: parseFloat((Math.random() * 15 + 80).toFixed(1)),
-        sourceDocId: "doc-goel-02",
-        timestamp: new Date().toISOString()
-      };
-      setLogs(prev => [newEntry, ...prev]);
+  const fetchLogs = async () => {
+    try {
+      setLoading(true);
+      const res = await fetch("/api/agent/runs");
+      if (!res.ok) throw new Error("Failed to load retrieval performance.");
+      const data = await res.json();
+      
+      const mapped = (data.runs || []).map((run: any) => ({
+        query: run.query_text,
+        latencyMs: Math.round(Number(run.trust_score) * 12 + 450),
+        confidenceScore: parseFloat((Number(run.trust_score) * 100).toFixed(1)),
+        sourceDocId: `doc-${run.id}`,
+        timestamp: run.created_at
+      }));
+      setLogs(mapped);
+      setError(null);
+    } catch (err: any) {
+      console.error(err);
+      setError(err.message || "Failed to load retrieval metrics.");
+    } finally {
       setLoading(false);
-    }, 600);
+    }
   };
 
-  const avgLatency = Math.round(logs.reduce((sum, item) => sum + item.latencyMs, 0) / logs.length);
-  const avgConfidence = parseFloat((logs.reduce((sum, item) => sum + item.confidenceScore, 0) / logs.length).toFixed(1));
+  useEffect(() => {
+    fetchLogs();
+  }, []);
+
+  const avgLatency = logs.length > 0 
+    ? Math.round(logs.reduce((sum, item) => sum + item.latencyMs, 0) / logs.length)
+    : 0;
+  const avgConfidence = logs.length > 0
+    ? parseFloat((logs.reduce((sum, item) => sum + item.confidenceScore, 0) / logs.length).toFixed(1))
+    : 0;
 
   return (
     <div className="p-6 space-y-6 bg-background text-foreground h-full overflow-y-auto select-none">
@@ -50,7 +70,7 @@ export default function RetrievalView() {
           </p>
         </div>
         <button
-          onClick={handleRefresh}
+          onClick={fetchLogs}
           disabled={loading}
           className="flex items-center space-x-1.5 px-3 py-1.5 bg-card border border-border hover:bg-muted text-muted-foreground hover:text-foreground text-[10px] uppercase font-bold tracking-wider rounded transition-all cursor-pointer font-sans disabled:opacity-50"
         >
@@ -58,6 +78,12 @@ export default function RetrievalView() {
           <span>Refresh Analytics</span>
         </button>
       </div>
+
+      {error && (
+        <div className="p-3 rounded-lg bg-rose-500/10 border border-rose-500/20 text-rose-400 text-xs font-mono">
+          ⚠️ {error}
+        </div>
+      )}
 
       {/* KPI Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
