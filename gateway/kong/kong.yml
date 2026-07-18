@@ -187,6 +187,13 @@ services:
         protocols: [http, https]
         strip_path: false
 
+      - name: agent-memory-route
+        paths:
+          - /api/v1/agent/memory
+        methods: [GET, OPTIONS]
+        protocols: [http, https]
+        strip_path: false
+
   # ── Content Governance Service ────────────────────────────────────────
   - name: content-governance-service
     url: http://content-governance:8081
