@@ -1,8 +1,11 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { TOOL_DECLARATIONS, executeTool, ToolContext } from "../tools/knowledgeTools";
 import { scanForInjection, filterRetrievedContext } from "../guardrails/injectionGuard";
+import { getProjectRules } from "../memory/projectRules";
+import { getPersistentMemory } from "../memory/persistentMemory";
+import { getSessionHistory, saveSessionHistory } from "../memory/ephemeralContext";
 
-const GEMINI_MODEL = process.env.GEMINI_MODEL || "gemini-2.0-flash";
+const GEMINI_MODEL = process.env.GEMINI_MODEL || "gemini-3.5-flash";
 // NOTE: verify this model name against Google's current published list before
 // deploying — model identifiers change and this file's default may go stale.
 
@@ -35,7 +38,7 @@ export interface ChatResult {
 
 const MAX_TOOL_ROUNDS = 5;
 
-export async function runAgentChat(userMessage: string, ctx: ToolContext): Promise<ChatResult> {
+export async function runAgentChat(userMessage: string, ctx: ToolContext, sessionId: string): Promise<ChatResult> {
   // Guard the raw user input BEFORE it ever reaches the model.
   const inputScan = scanForInjection(userMessage, "user_message");
   if (!inputScan.clean) {
@@ -48,13 +51,29 @@ export async function runAgentChat(userMessage: string, ctx: ToolContext): Promi
     };
   }
 
+  const projectRules = getProjectRules();
+  const persistentMemory = getPersistentMemory(ctx.orgId);
+
+  const finalSystemInstruction = `${SYSTEM_INSTRUCTION}
+
+---
+The above hardcoded rules take STRICT priority over the rules and memories below.
+
+# Project Rules
+${projectRules || "None"}
+
+# Persistent Memory
+${persistentMemory || "None"}
+`;
+
   const model = getClient().getGenerativeModel({
     model: GEMINI_MODEL,
-    systemInstruction: SYSTEM_INSTRUCTION,
+    systemInstruction: finalSystemInstruction,
     tools: [{ functionDeclarations: TOOL_DECLARATIONS }] as any,
   });
 
-  const chat = model.startChat();
+  const history = getSessionHistory(sessionId);
+  const chat = model.startChat({ history });
   let response = await chat.sendMessage(userMessage);
   const toolCallsMade: { name: string; args: Record<string, any> }[] = [];
   let droppedContextChunks = 0;
@@ -88,6 +107,8 @@ export async function runAgentChat(userMessage: string, ctx: ToolContext): Promi
 
     response = await chat.sendMessage(toolResponses as any);
   }
+
+  saveSessionHistory(sessionId, await chat.getHistory());
 
   return {
     reply: response.response.text(),

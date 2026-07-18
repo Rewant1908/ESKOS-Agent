@@ -12,6 +12,7 @@
  */
 
 import axios from "axios";
+import { appendPersistentMemory } from "../memory/persistentMemory";
 
 const KONG_BASE_URL = process.env.KONG_BASE_URL || "http://kong:8000";
 
@@ -97,6 +98,17 @@ export const TOOL_DECLARATIONS: any[] = [
       required: ["title", "draft_text", "source_doc_ids"],
     },
   },
+  {
+    name: "remember_fact",
+    description: "Persist an important fact or preference into the organization's long-term memory. This applies across all sessions for the current organization.",
+    parameters: {
+      type: "object",
+      properties: {
+        fact: { type: "string", description: "The fact to remember." },
+      },
+      required: ["fact"],
+    },
+  },
 ];
 
 // Deliberately NOT exposed as a tool: approve/reject on governance drafts.
@@ -132,6 +144,10 @@ export async function executeTool(name: string, args: Record<string, any>, ctx: 
 
     case "submit_governance_draft":
       return submitGovernanceDraft(args, ctx);
+
+    case "remember_fact":
+      appendPersistentMemory(ctx.orgId, args.fact);
+      return { status: "success", memory_appended: true };
 
     default:
       throw new Error(`Unknown tool: ${name}`);

@@ -41,7 +41,7 @@ don't — that's the one line this system shouldn't let an LLM cross on its own.
    dashboard setting it explicitly, but it is NOT real auth. Once Kong
    key-auth/OIDC is wired in (still an open item from Phase 3), replace this
    with a real lookup against the authenticated session/consumer.
-4. **Set `GEMINI_MODEL`** — defaults to `gemini-2.0-flash` in
+4. **Set `GEMINI_MODEL`** — defaults to `gemini-3.5-flash` in
    `src/gemini/agentLoop.ts`, but verify against Google's current model list
    before relying on that default; model identifiers change over time.
 

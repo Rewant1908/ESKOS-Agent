@@ -2,9 +2,7 @@ import { useState, useRef, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import ChatMessage from '../components/ChatMessage';
 
-const FABRIC_URL = import.meta.env.VITE_FABRIC_URL;
-const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY;
-const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`;
+const KONG_URL = import.meta.env.VITE_KONG_URL || 'http://localhost:8000';
 
 const WELCOME = {
   role: 'assistant',
@@ -12,23 +10,12 @@ const WELCOME = {
   citations: [],
 };
 
-const SYSTEM_PROMPT = `You are ESKOS AI, an expert product assistant for Goel Scientific, a leading laboratory glassware manufacturer. 
-
-You have access to a real-time Knowledge Fabric containing product datasheets, specifications, and relationships.
-
-IMPORTANT RULES:
-- Only answer questions about laboratory equipment and scientific products
-- Ground all answers in the provided knowledge context when available
-- If the context is empty, answer from your general scientific knowledge but note the limitation
-- Be precise about measurements, materials, and specifications
-- Format answers clearly with bullet points where appropriate
-- Keep answers concise but comprehensive`;
-
 function ChatContent() {
   const [searchParams] = useSearchParams();
   const [messages, setMessages] = useState([WELCOME]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
+  const [sessionId, setSessionId] = useState(undefined);
   const bottomRef = useRef(null);
   const textareaRef = useRef(null);
 
@@ -52,79 +39,40 @@ function ChatContent() {
     // Add typing indicator
     setMessages(prev => [...prev, { role: 'assistant', content: '', loading: true }]);
 
-    let ragContext = '';
-    let citations = [];
-
-    // 1. Retrieve context & citations from Knowledge Fabric
     try {
-      const contextRes = await fetch(`${FABRIC_URL}/api/v1/knowledge/context`, {
+      const res = await fetch(`${KONG_URL}/api/v1/agent/chat`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'ngrok-skip-browser-warning': 'true' },
-        body: JSON.stringify({ query: currentQuery, org_id: 'goel-scientific', rag_type: 'product', limit: 5 }),
-      });
-      if (contextRes.ok) {
-        const contextData = await contextRes.json();
-        ragContext = contextData.formatted_context || '';
-      }
-
-      const queryRes = await fetch(`${FABRIC_URL}/api/v1/knowledge/query`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'ngrok-skip-browser-warning': 'true' },
-        body: JSON.stringify({ query: currentQuery, org_id: 'goel-scientific', rag_type: 'product', limit: 5 }),
-      });
-      if (queryRes.ok) {
-        const queryData = await queryRes.json();
-        citations = [...new Set((queryData.vector_hits || []).map(h => h.parent_doc_id))];
-      }
-    } catch (e) {
-      console.error("RAG retrieval error", e);
-    }
-
-    // 2. Build conversation history for Gemini
-    const contents = [];
-    const chatHistory = messages.filter(m => !m.loading).slice(-6);
-    for (const msg of chatHistory) {
-      if (msg.role === 'user') {
-        contents.push({ role: 'user', parts: [{ text: msg.content }] });
-      }
-      if (msg.role === 'assistant' && !msg.loading) {
-        contents.push({ role: 'model', parts: [{ text: msg.content }] });
-      }
-    }
-
-    // Add current user turn with RAG context
-    const userText = ragContext
-      ? `Context from ESKOS Knowledge Fabric:\n${ragContext}\n\n---\nUser Question: ${currentQuery}`
-      : `User Question: ${currentQuery}\n\n(Note: No specific product data was retrieved from the Knowledge Fabric for this query.)`;
-
-    contents.push({ role: 'user', parts: [{ text: userText }] });
-
-    // 3. Request completion from Gemini API
-    try {
-      const geminiRes = await fetch(GEMINI_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'x-eskos-org-id': 'goel-scientific',
+          'ngrok-skip-browser-warning': 'true'
+        },
         body: JSON.stringify({
-          system_instruction: { parts: [{ text: SYSTEM_PROMPT }] },
-          contents,
-          generationConfig: {
-            temperature: 0.3,
-            maxOutputTokens: 1024,
-          }
+          message: currentQuery,
+          session_id: sessionId
         }),
       });
 
-      const geminiData = await geminiRes.json();
-      const answer = geminiData.candidates?.[0]?.content?.parts?.[0]?.text || 'I was unable to generate a response. Please try again.';
+      if (!res.ok) throw new Error('API Error');
+
+      const data = await res.json();
+      
+      if (data.session_id) {
+        setSessionId(data.session_id);
+      }
+
+      const answer = data.reply || 'I was unable to generate a response. Please try again.';
+      const citations = data.tool_calls ? data.tool_calls.map(t => t.name || t) : [];
 
       setMessages(prev => [
         ...prev.filter(m => !m.loading),
         { role: 'assistant', content: answer, citations },
       ]);
     } catch (err) {
+      console.error("Chat error", err);
       setMessages(prev => [
         ...prev.filter(m => !m.loading),
-        { role: 'assistant', content: '❌ Sorry, I encountered an error connecting to Gemini. Please verify your VITE_GEMINI_API_KEY in .env.local.', citations: [] },
+        { role: 'assistant', content: '❌ Sorry, I encountered an error connecting to the agent. Please verify your VITE_KONG_URL.', citations: [] },
       ]);
     }
     setLoading(false);

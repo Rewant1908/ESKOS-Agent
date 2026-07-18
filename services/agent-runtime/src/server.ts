@@ -10,7 +10,8 @@ const PORT = process.env.PORT || 8091;
 app.get("/healthz", (_req, res) => res.json({ status: "ok" }));
 
 app.post("/api/v1/agent/chat", async (req, res) => {
-  const { message } = req.body || {};
+  const { message, session_id } = req.body || {};
+  const actualSessionId = session_id || require('crypto').randomUUID();
 
   if (!message || typeof message !== "string" || message.trim().length === 0) {
     return res.status(400).json({ error: "`message` (non-empty string) is required" });
@@ -23,9 +24,10 @@ app.post("/api/v1/agent/chat", async (req, res) => {
   const callerId = resolveCallerId(req);
 
   try {
-    const result = await runAgentChat(message, { orgId, callerId });
+    const result = await runAgentChat(message, { orgId, callerId }, actualSessionId);
     res.json({
       reply: result.reply,
+      session_id: actualSessionId,
       tool_calls: result.toolCallsMade,
       dropped_context_chunks: result.droppedContextChunks,
       blocked_input: result.blockedInput,

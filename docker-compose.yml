@@ -170,7 +170,7 @@ services:
       - knowledge-fabric
     environment:
       GEMINI_API_KEY: ${GEMINI_API_KEY}
-      GEMINI_MODEL: gemini-2.0-flash
+      GEMINI_MODEL: gemini-3.5-flash
       KONG_BASE_URL: http://kong:8000
       PORT: 8091
     restart: unless-stopped
