@@ -132,6 +132,7 @@ services:
       POSTGRES_DB: eskos_knowledge
     volumes:
       - postgres_data:/var/lib/postgresql/data
+      - ./services/agent-runtime/db/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
     restart: unless-stopped
 
   # --- Knowledge Fabric Service ---
@@ -177,6 +178,11 @@ services:
       GEMINI_MODEL: gemini-3.1-flash-lite
       KONG_BASE_URL: http://kong:8000
       PORT: 8091
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_USER: eskos
+      POSTGRES_PASSWORD: eskosdbpass123
+      POSTGRES_DB: eskos_knowledge
     restart: unless-stopped
 
   # --- Content Governance Service (Phase 5) ---

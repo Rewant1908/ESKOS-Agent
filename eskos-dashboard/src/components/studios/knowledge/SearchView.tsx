@@ -35,9 +35,25 @@ export default function SearchView() {
         body: JSON.stringify({ query, org_id: activeTenant, rag_type: "product", limit: 5 }),
       });
       const data = await res.json();
+
+      let formattedGraphStr = "";
+      if (data.graph_context && typeof data.graph_context === "object") {
+        const parts: string[] = [];
+        for (const [docId, neighbors] of Object.entries(data.graph_context)) {
+          if (Array.isArray(neighbors) && neighbors.length > 0) {
+            parts.push(`Document: ${docId}`);
+            neighbors.forEach((n: any) => {
+              parts.push(`  • --[${n.relationship || "RELATED_TO"}]--> ${n.name || n.id || ""} (${n.id || ""})`);
+            });
+            parts.push("");
+          }
+        }
+        formattedGraphStr = parts.join("\n").trim();
+      }
+
       setResults({
         vectorHits: data.vector_hits || [],
-        graphContext: data.graph_context || "",
+        graphContext: formattedGraphStr || "",
       });
     } catch (err) {
       console.error(err);

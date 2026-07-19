@@ -4,15 +4,6 @@ import React, { useState, useEffect } from "react";
 import { CircleDollarSign, Coins, TrendingUp, RefreshCw, BarChart2, Database, Loader2 } from "lucide-react";
 import DataStateBadge from "@/components/ui/DataStateBadge";
 
-interface QueryLog {
-  id: number;
-  query_text: string;
-  trust_score: number;
-  matched_chunks_count: number;
-  response_status: string;
-  created_at: string;
-}
-
 interface CostLogEntry {
   id: string;
   timestamp: string;
@@ -35,22 +26,33 @@ export default function CostAnalyticsView() {
       if (!res.ok) throw new Error("Failed to load operational runs.");
       const data = await res.json();
       
-      const runs: QueryLog[] = data.runs || [];
+      const runs: any[] = data.runs || [];
       const costEntries: CostLogEntry[] = runs.map((run) => {
-        // Standard RAG token scaling calculations
-        const input = Math.round(run.matched_chunks_count * 180 + 320);
-        const output = 350;
-        // Gemini-1.5-Pro Pricing: $1.25 / 1M input tokens, $5.00 / 1M output tokens
-        const cost = (input * 0.00000125) + (output * 0.000005);
-        
+        // Find which node in the orchestration trace was most active
+        let mostFrequentAgent = "planner";
+        if (run.trace && run.trace.length > 0) {
+          const counts: Record<string, number> = {};
+          run.trace.forEach((step: any) => {
+            const agentName = (step.agent || "planner").toLowerCase();
+            counts[agentName] = (counts[agentName] || 0) + 1;
+          });
+          let maxCount = 0;
+          Object.entries(counts).forEach(([agent, count]) => {
+            if (count > maxCount) {
+              maxCount = count;
+              mostFrequentAgent = agent;
+            }
+          });
+        }
+
         return {
           id: `tx-0${run.id}`,
           timestamp: run.created_at,
-          agent: run.trust_score > 80 ? "synthesis" : "researcher",
-          model: "gemini-1.5-pro",
-          inputTokens: input,
-          outputTokens: output,
-          costUsd: parseFloat(cost.toFixed(6))
+          agent: mostFrequentAgent,
+          model: run.model,
+          inputTokens: run.input_tokens,
+          outputTokens: run.output_tokens,
+          costUsd: parseFloat(Number(run.usd_cost).toFixed(8))
         };
       });
 
@@ -72,12 +74,14 @@ export default function CostAnalyticsView() {
   const totalOutputTokens = logs.reduce((sum, item) => sum + item.outputTokens, 0);
   const totalCost = logs.reduce((sum, item) => sum + item.costUsd, 0);
 
-  const synthesisCost = logs.filter(l => l.agent === "synthesis").reduce((sum, l) => sum + l.costUsd, 0);
+  const plannerCost = logs.filter(l => l.agent === "planner").reduce((sum, l) => sum + l.costUsd, 0);
   const researcherCost = logs.filter(l => l.agent === "researcher").reduce((sum, l) => sum + l.costUsd, 0);
-  const totalExp = synthesisCost + researcherCost;
+  const complianceCost = logs.filter(l => l.agent === "compliance").reduce((sum, l) => sum + l.costUsd, 0);
+  const totalExp = plannerCost + researcherCost + complianceCost;
 
-  const synthesisPercent = totalExp > 0 ? Math.round((synthesisCost / totalExp) * 100) : 50;
-  const researcherPercent = totalExp > 0 ? Math.round((researcherCost / totalExp) * 100) : 50;
+  const plannerPercent = totalExp > 0 ? Math.round((plannerCost / totalExp) * 100) : 0;
+  const researcherPercent = totalExp > 0 ? Math.round((researcherCost / totalExp) * 100) : 0;
+  const compliancePercent = totalExp > 0 ? Math.round((complianceCost / totalExp) * 100) : 0;
 
   if (loading && logs.length === 0) {
     return (
@@ -97,7 +101,7 @@ export default function CostAnalyticsView() {
         <div>
           <div className="flex items-center space-x-3">
             <h1 className="text-xl font-semibold text-slate-100 font-sans tracking-wide">Token Cost Accounting</h1>
-            <DataStateBadge state="simulated" />
+            <DataStateBadge state="live" />
           </div>
           <p className="text-xs text-muted-foreground mt-1 font-sans">
             Inspect model operational metrics, input/output token allocation weights, and cumulative session charge summaries.
@@ -155,32 +159,43 @@ export default function CostAnalyticsView() {
         </div>
       </div>
 
-      {/* Breakdown Chart Simulation */}
+      {/* Breakdown Chart */}
       <div className="bg-card border border-border p-5 rounded-lg space-y-4">
         <span className="text-[10px] font-bold text-slate-200 uppercase tracking-widest font-mono flex items-center space-x-1.5">
           <BarChart2 className="w-3.5 h-3.5 text-primary" />
           <span>Operational Expenditure Allocation Weight</span>
         </span>
         <div className="space-y-3 font-sans text-xs">
-          {/* Synthesis weight bar */}
+          {/* Planner weight bar */}
           <div className="space-y-1.5">
             <div className="flex justify-between text-slate-300 font-mono text-[10px]">
-              <span>SYNTHESIS AGENT</span>
-              <span className="font-bold">{synthesisPercent}%</span>
+              <span>PLANNER NODE</span>
+              <span className="font-bold">{plannerPercent}%</span>
             </div>
             <div className="w-full bg-background h-2 rounded-full overflow-hidden">
-              <div className="bg-primary h-full" style={{ width: `${synthesisPercent}%` }} />
+              <div className="bg-primary h-full" style={{ width: `${plannerPercent}%` }} />
             </div>
           </div>
 
           {/* Researcher weight bar */}
           <div className="space-y-1.5">
             <div className="flex justify-between text-slate-300 font-mono text-[10px]">
-              <span>RESEARCHER AGENT</span>
+              <span>RESEARCHER NODE</span>
               <span className="font-bold">{researcherPercent}%</span>
             </div>
             <div className="w-full bg-background h-2 rounded-full overflow-hidden">
               <div className="bg-amber-500 h-full" style={{ width: `${researcherPercent}%` }} />
+            </div>
+          </div>
+
+          {/* Compliance weight bar */}
+          <div className="space-y-1.5">
+            <div className="flex justify-between text-slate-300 font-mono text-[10px]">
+              <span>COMPLIANCE NODE</span>
+              <span className="font-bold">{compliancePercent}%</span>
+            </div>
+            <div className="w-full bg-background h-2 rounded-full overflow-hidden">
+              <div className="bg-rose-500 h-full" style={{ width: `${compliancePercent}%` }} />
             </div>
           </div>
         </div>
@@ -201,7 +216,7 @@ export default function CostAnalyticsView() {
           <div className="border border-border rounded overflow-hidden">
             <table className="w-full text-left font-sans text-xs border-collapse">
               <thead>
-                <tr className="bg-card border-b border-border text-[9px] uppercase font-bold text-muted-foreground tracking-wider font-mono font-bold">
+                <tr className="bg-card border-b border-border text-[9px] uppercase font-bold text-muted-foreground tracking-wider font-mono">
                   <th className="p-3">Log ID</th>
                   <th className="p-3">Timestamp</th>
                   <th className="p-3">Agent Group</th>
@@ -217,16 +232,18 @@ export default function CostAnalyticsView() {
                     <td className="p-3 text-slate-500">{new Date(item.timestamp).toLocaleString()}</td>
                     <td className="p-3 uppercase text-[10px] font-sans">
                       <span className={`px-1.5 py-0.5 rounded border font-bold ${
-                        item.agent === "synthesis" 
+                        item.agent === "planner" 
                           ? "border-primary/20 text-primary bg-primary/5"
-                          : "border-amber-500/20 text-amber-400 bg-amber-500/5"
+                          : item.agent === "researcher"
+                          ? "border-amber-500/20 text-amber-400 bg-amber-500/5"
+                          : "border-rose-500/20 text-rose-400 bg-rose-500/5"
                       }`}>
                         {item.agent}
                       </span>
                     </td>
                     <td className="p-3 text-slate-400">{item.model}</td>
                     <td className="p-3 text-slate-300">{item.inputTokens} / {item.outputTokens}</td>
-                    <td className="p-3 text-right text-emerald-400 font-bold">${item.costUsd.toFixed(6)}</td>
+                    <td className="p-3 text-right text-emerald-400 font-bold">${item.costUsd.toFixed(8)}</td>
                   </tr>
                 ))}
               </tbody>

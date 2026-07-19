@@ -4,19 +4,34 @@ import React, { useState, useEffect } from "react";
 import { Cpu, Loader2, AlertCircle, RefreshCw } from "lucide-react";
 import DataStateBadge from "@/components/ui/DataStateBadge";
 
-interface QueryLog {
+interface TraceStep {
+  agent: string;
+  action: string;
+  message: string;
+  timestamp: string;
+}
+
+interface AgentRun {
   id: number;
+  session_id: string;
+  org_id: string;
+  caller_id: string;
   query_text: string;
-  trust_score: number;
-  matched_chunks_count: number;
-  response_status: string;
+  reply_preview: string | null;
+  trace: TraceStep[];
+  input_tokens: number;
+  output_tokens: number;
+  usd_cost: number;
+  model: string;
+  blocked_input: boolean;
   created_at: string;
 }
 
 export default function AgentMonitoringView() {
-  const [runs, setRuns] = useState<QueryLog[]>([]);
+  const [runs, setRuns] = useState<AgentRun[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [expandedRunId, setExpandedRunId] = useState<number | null>(null);
 
   const fetchRuns = async () => {
     try {
@@ -38,18 +53,9 @@ export default function AgentMonitoringView() {
     fetchRuns();
   }, []);
 
-  const calculateLatency = (trustScore: number) => {
-    // Generates a realistic dynamic latency mapping based on query processing complexity
-    return Math.round(Number(trustScore) * 12 + 450);
-  };
-
-  const calculateTokens = (chunkCount: number) => {
-    return Math.round(chunkCount * 180 + 320);
-  };
-
-  const totalLatency = runs.reduce((sum, r) => sum + calculateLatency(r.trust_score), 0);
-  const avgLatency = runs.length > 0 ? Math.round(totalLatency / runs.length) : 0;
-  const blockedCount = runs.filter((r) => r.response_status === "low_confidence").length;
+  const totalSteps = runs.reduce((sum, r) => sum + (r.trace?.length || 0), 0);
+  const avgSteps = runs.length > 0 ? (totalSteps / runs.length).toFixed(1) : "0";
+  const blockedCount = runs.filter((r) => r.blocked_input).length;
 
   if (loading && runs.length === 0) {
     return (
@@ -68,7 +74,7 @@ export default function AgentMonitoringView() {
         <div>
           <div className="flex items-center space-x-3">
             <h1 className="text-xl font-semibold text-slate-100 font-sans tracking-wide">Agent Monitoring</h1>
-            <DataStateBadge state="simulated" />
+            <DataStateBadge state="live" />
           </div>
           <p className="text-xs text-muted-foreground mt-1 font-sans">
             Monitor active agent tasks, latency telemetry, and model execution times in real-time.
@@ -93,9 +99,9 @@ export default function AgentMonitoringView() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div className="bg-card/40 border border-border/80 p-4 rounded-xl flex flex-col justify-between backdrop-blur-sm">
           <div>
-            <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest font-mono">Average Latency</span>
+            <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest font-mono">Avg Orchestration Steps</span>
             <h2 className="text-2xl font-bold font-mono text-slate-200 mt-2">
-              {runs.length > 0 ? `${avgLatency}ms` : "0ms"}
+              {runs.length > 0 ? `${avgSteps} steps` : "0 steps"}
             </h2>
           </div>
         </div>
@@ -109,7 +115,7 @@ export default function AgentMonitoringView() {
 
         <div className="bg-card/40 border border-border/80 p-4 rounded-xl flex flex-col justify-between backdrop-blur-sm">
           <div>
-            <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest font-mono">Low-Confidence Runs</span>
+            <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest font-mono">Blocked Runs</span>
             <h2 className="text-2xl font-bold font-mono text-amber-500 mt-2">{blockedCount} runs</h2>
           </div>
         </div>
@@ -125,32 +131,64 @@ export default function AgentMonitoringView() {
         ) : (
           <div className="space-y-2.5 font-mono text-xs text-muted-foreground">
             {runs.map((run) => (
-              <div key={run.id} className="flex flex-col md:flex-row md:items-center justify-between p-3.5 rounded-lg bg-card/20 border border-border/80 gap-3 hover:border-slate-800 transition-colors">
-                <div className="space-y-1">
-                  <div className="flex items-center space-x-2">
-                    <Cpu className="w-4 h-4 text-primary shrink-0" />
-                    <span className="text-slate-200 font-semibold">run-{run.id}</span>
-                    <span className="text-[10px] text-muted-foreground font-sans">
-                      {new Date(run.created_at).toLocaleString()}
-                    </span>
+              <div key={run.id} className="flex flex-col p-3.5 rounded-lg bg-card/20 border border-border/80 gap-3 hover:border-slate-800 transition-colors">
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
+                  <div className="space-y-1">
+                    <div className="flex items-center space-x-2">
+                      <Cpu className="w-4 h-4 text-primary shrink-0" />
+                      <span className="text-slate-200 font-semibold">run-{run.id}</span>
+                      <span className="text-[10px] text-muted-foreground font-sans">
+                        {new Date(run.created_at).toLocaleString()}
+                      </span>
+                      <span className="text-[10px] text-slate-500 font-mono">({run.model})</span>
+                    </div>
+                    <p className="text-[11px] text-slate-400 font-sans truncate max-w-lg">
+                      Query: "{run.query_text}"
+                    </p>
                   </div>
-                  <p className="text-[11px] text-slate-400 font-sans truncate max-w-lg">
-                    Query: "{run.query_text}"
-                  </p>
+                  <div className="flex items-center space-x-4 shrink-0 text-[11px]">
+                    <span>{run.trace?.length || 0} steps</span>
+                    <span>{run.input_tokens + run.output_tokens} tks</span>
+                    <span className={`font-bold uppercase ${
+                      run.blocked_input 
+                        ? "text-rose-400" 
+                        : "text-emerald-400"
+                    }`}>
+                      {run.blocked_input ? "BLOCKED" : "PASSED"}
+                    </span>
+                    <button
+                      onClick={() => setExpandedRunId(expandedRunId === run.id ? null : run.id)}
+                      className="text-[10px] text-primary hover:underline font-sans cursor-pointer"
+                    >
+                      {expandedRunId === run.id ? "Hide Trace" : "View Trace"}
+                    </button>
+                  </div>
                 </div>
-                <div className="flex items-center space-x-4 shrink-0 text-[11px]">
-                  <span>{calculateLatency(run.trust_score)}ms</span>
-                  <span>{calculateTokens(run.matched_chunks_count)} tks</span>
-                  <span className={`font-bold uppercase ${
-                    run.response_status === "success" 
-                      ? "text-emerald-400" 
-                      : run.response_status === "low_confidence" 
-                      ? "text-amber-500" 
-                      : "text-rose-400"
-                  }`}>
-                    {run.response_status}
-                  </span>
-                </div>
+
+                {expandedRunId === run.id && run.trace && run.trace.length > 0 && (
+                  <div className="mt-3 border-t border-border/60 pt-3 space-y-2">
+                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest font-mono">Orchestration Trace Steps</span>
+                    <div className="space-y-3 pl-2 border-l border-primary/20">
+                      {run.trace.map((step, idx) => (
+                        <div key={idx} className="space-y-1">
+                          <div className="flex items-center space-x-2 text-[10px]">
+                            <span className="text-primary font-semibold uppercase">{step.agent}</span>
+                            <span className="text-slate-500">&rarr;</span>
+                            <span className="text-slate-300 italic">{step.action}</span>
+                            {step.timestamp && (
+                              <span className="text-[9px] text-slate-600 font-sans ml-auto">
+                                {new Date(step.timestamp).toLocaleTimeString()}
+                              </span>
+                            )}
+                          </div>
+                          {step.message && (
+                            <p className="text-[10px] text-slate-400 pl-4 font-sans whitespace-pre-wrap">{step.message}</p>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             ))}
           </div>

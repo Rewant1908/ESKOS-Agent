@@ -1,6 +1,7 @@
 import express from "express";
 import { runLangGraphAgentChat as runAgentChat } from "./gemini/langgraph";
 import { resolveOrgId, resolveCallerId } from "./guardrails/orgScope";
+import pool from "./db";
 import { ToolRegistry } from "./registries/ToolRegistry";
 import { PromptRegistry } from "./registries/PromptRegistry";
 import { getProjectRules } from "./memory/projectRules";
@@ -30,6 +31,28 @@ app.post("/api/v1/agent/chat", async (req, res) => {
 
   try {
     const result = await runAgentChat(message, { orgId, callerId }, actualSessionId);
+
+    const modelUsed = process.env.GEMINI_MODEL || "gemini-3.5-flash";
+    pool.query(
+      `INSERT INTO agent_runs
+       (session_id, org_id, caller_id, query_text, reply_preview, trace,
+        input_tokens, output_tokens, usd_cost, model, blocked_input)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`,
+      [
+        actualSessionId,
+        orgId,
+        callerId,
+        message.slice(0, 500),
+        (result.reply || "").slice(0, 300),
+        JSON.stringify(result.trace || []),
+        result.cost?.inputTokens || 0,
+        result.cost?.outputTokens || 0,
+        result.cost?.usd || 0,
+        modelUsed,
+        result.blockedInput || false,
+      ]
+    ).catch((err) => console.error("[agent-runtime] failed to log run:", err.message));
+
     res.json({
       reply: result.reply,
       session_id: actualSessionId,
