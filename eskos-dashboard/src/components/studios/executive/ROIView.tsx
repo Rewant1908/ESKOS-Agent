@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import { CircleDollarSign, RefreshCw, BarChart2, TrendingUp, ShieldCheck, Clock, HelpCircle, Info, Landmark } from "lucide-react";
+import DataStateBadge from "@/components/ui/DataStateBadge";
 
 interface ROIMetrics {
   manualQueryCostUsd: number;
@@ -49,7 +50,10 @@ export default function ROIView() {
       {/* Header */}
       <div className="flex justify-between items-start">
         <div>
-          <h1 className="text-xl font-semibold text-slate-100 font-sans tracking-wide">ROI Analytics</h1>
+          <div className="flex items-center space-x-3">
+            <h1 className="text-xl font-semibold text-slate-100 font-sans tracking-wide">ROI Analytics</h1>
+            <DataStateBadge state="simulated" />
+          </div>
           <p className="text-xs text-muted-foreground mt-1 font-sans">
             Inspect total estimated organization savings, support ticket deflection rates, and developer hours saved.
           </p>

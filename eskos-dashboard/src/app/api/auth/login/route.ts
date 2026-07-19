@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import pool from "@/lib/db";
-import { hashPassword, encryptSession } from "@/lib/auth";
+import { verifyPassword, encryptSession } from "@/lib/auth";
 
 export async function POST(request: Request) {
   try {
@@ -14,10 +14,9 @@ export async function POST(request: Request) {
       );
     }
 
-    const passwordHash = hashPassword(password);
     const result = await pool.query(
-      "SELECT id, username, role, tenant FROM users WHERE username = $1 AND password_hash = $2",
-      [username, passwordHash]
+      "SELECT id, username, role, tenant, password_hash FROM users WHERE username = $1",
+      [username]
     );
 
     if (result.rows.length === 0) {
@@ -27,7 +26,16 @@ export async function POST(request: Request) {
       );
     }
 
-    const user = result.rows[0];
+    const { password_hash, ...user } = result.rows[0];
+    const isPasswordValid = await verifyPassword(password, password_hash);
+
+    if (!isPasswordValid) {
+      return NextResponse.json(
+        { error: "Invalid username or password." },
+        { status: 401 }
+      );
+    }
+
     const sessionToken = encryptSession(user);
 
     const cookieStore = await cookies();

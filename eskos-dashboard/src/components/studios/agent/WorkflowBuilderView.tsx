@@ -5,6 +5,7 @@ import {
   GitMerge, Play, RotateCcw, Trash2, Settings, Plus, Info, 
   Database, ShieldCheck, Cpu, CheckCircle2, UserCheck, Search, HelpCircle, Save, Loader2 
 } from "lucide-react";
+import DataStateBadge from "@/components/ui/DataStateBadge";
 
 interface WorkflowNode {
   id: string;
@@ -226,7 +227,10 @@ export default function WorkflowBuilderView() {
       {/* Header */}
       <div className="flex justify-between items-start">
         <div>
-          <h1 className="text-xl font-semibold text-slate-100 font-sans tracking-wide">Orchestration & Workflow Builder</h1>
+          <div className="flex items-center space-x-3">
+            <h1 className="text-xl font-semibold text-slate-100 font-sans tracking-wide">Orchestration & Workflow Builder</h1>
+            <DataStateBadge state="simulated" />
+          </div>
           <p className="text-xs text-muted-foreground mt-1 font-sans">
             Build, edit, and orchestrate custom multi-agent processing pipelines using state machine graphs.
           </p>

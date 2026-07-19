@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { History, Search, RefreshCw, Key, ShieldCheck, HelpCircle, FileText, Loader2, Info } from "lucide-react";
+import DataStateBadge from "@/components/ui/DataStateBadge";
 
 interface AuditLog {
   draft_id: string;
@@ -66,7 +67,10 @@ export default function AuditTrailView() {
       {/* Header */}
       <div className="flex justify-between items-start">
         <div>
-          <h1 className="text-xl font-semibold text-slate-100 font-sans tracking-wide">Governance Audit Explorer</h1>
+          <div className="flex items-center space-x-3">
+            <h1 className="text-xl font-semibold text-slate-100 font-sans tracking-wide">Governance Audit Explorer</h1>
+            <DataStateBadge state="live" />
+          </div>
           <p className="text-xs text-muted-foreground mt-1 font-sans">
             Trace publishing decisions, manual supervisor comments, and cryptographic content hashes of generated knowledge.
           </p>

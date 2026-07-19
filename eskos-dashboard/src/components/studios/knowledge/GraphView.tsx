@@ -3,6 +3,7 @@
 import React, { useEffect, useRef, useState, useCallback } from "react";
 import { useSearchParams } from "next/navigation";
 import { Network, Activity, Info, Loader2 } from "lucide-react";
+import DataStateBadge from "@/components/ui/DataStateBadge";
 
 const NODE_COLORS: Record<string, string> = {
   product:     '#818cf8',
@@ -283,6 +284,7 @@ export default function GraphView() {
         <div className="flex items-center space-x-2">
           <Network className="w-4 h-4 text-primary" />
           <h2 className="text-xs font-semibold uppercase tracking-wider text-slate-200 font-sans">Knowledge Graph Explorer</h2>
+          <DataStateBadge state="live" />
           <span className="text-[10px] text-muted-foreground font-mono bg-muted/40 px-2 py-0.5 rounded border border-border">
             {nodes.length} nodes &middot; {edges.length} edges
           </span>

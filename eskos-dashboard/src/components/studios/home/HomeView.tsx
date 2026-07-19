@@ -8,6 +8,7 @@ import {
   Terminal, Sparkles, Send, CheckCircle2, ChevronRight, Globe, ShieldAlert
 } from "lucide-react";
 import { motion } from "framer-motion";
+import DataStateBadge from "@/components/ui/DataStateBadge";
 
 interface StudioCard {
   id: string;
@@ -115,9 +116,12 @@ export default function HomeView() {
             </span>
             <span className="text-[10px] text-slate-500 font-mono">ENVIRONMENT: PRODUCTION</span>
           </div>
-          <h1 className="text-2xl font-bold tracking-tight text-slate-200">
-            Welcome back, {currentUser?.username || "Operator"}
-          </h1>
+          <div className="flex items-center space-x-3">
+            <h1 className="text-2xl font-bold tracking-tight text-slate-200">
+              Welcome back, {currentUser?.username || "Operator"}
+            </h1>
+            <DataStateBadge state="live" />
+          </div>
           <p className="text-xs text-muted-foreground max-w-xl">
             You are operating the core environment for Goel Scientific AI workflows.
           </p>

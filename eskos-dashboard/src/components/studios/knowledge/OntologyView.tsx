@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import { Plus, Trash2, GitMerge, List, Network, Info, AlertTriangle, Loader2 } from "lucide-react";
+import DataStateBadge from "@/components/ui/DataStateBadge";
 
 interface OntologyClass {
   class_name: string;
@@ -256,7 +257,10 @@ export default function OntologyView() {
       {/* Header */}
       <div className="flex justify-between items-start">
         <div>
-          <h1 className="text-xl font-semibold text-slate-100 font-sans tracking-wide">Ontology Manager</h1>
+          <div className="flex items-center space-x-3">
+            <h1 className="text-xl font-semibold text-slate-100 font-sans tracking-wide">Ontology Manager</h1>
+            <DataStateBadge state="live" />
+          </div>
           <p className="text-xs text-muted-foreground mt-1 font-sans">
             Design logical classes, validate entity properties, and control edge relation maps.
           </p>

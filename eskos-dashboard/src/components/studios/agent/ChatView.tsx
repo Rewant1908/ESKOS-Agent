@@ -3,6 +3,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import ChatMessage from "./ChatMessage";
 import { Send, ArrowRight } from "lucide-react";
+import DataStateBadge from "@/components/ui/DataStateBadge";
 
 interface Message {
   role: string;
@@ -105,6 +106,14 @@ export default function ChatView() {
 
   return (
     <div className="flex flex-col h-full bg-background overflow-hidden">
+      {/* Header */}
+      <div className="p-6 pb-2 border-b border-border/60">
+        <div className="flex items-center space-x-3">
+          <h1 className="text-sm font-semibold text-slate-100 font-sans tracking-wide">AI Knowledge Assistant</h1>
+          <DataStateBadge state="live" />
+        </div>
+      </div>
+
       {/* Messages Window */}
       <div className="flex-1 overflow-y-auto p-6 space-y-4">
         {messages.map((msg, i) => (

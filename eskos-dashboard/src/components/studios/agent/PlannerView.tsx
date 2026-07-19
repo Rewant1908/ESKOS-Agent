@@ -5,6 +5,7 @@ import {
   Cpu, FileText, ShieldCheck, RefreshCw, Send, CheckCircle2, 
   AlertTriangle, DollarSign, ArrowRight, Loader2, Play, Settings2, Sparkles, Award
 } from "lucide-react";
+import DataStateBadge from "@/components/ui/DataStateBadge";
 
 export default function PlannerView() {
   const [activeTab, setActiveTab] = useState<"eeat" | "brand" | "price">("eeat");
@@ -86,7 +87,10 @@ export default function PlannerView() {
       
       {/* Header */}
       <div>
-        <h1 className="text-xl font-semibold text-slate-100 font-sans tracking-wide">Multi-Agent Planner</h1>
+        <div className="flex items-center space-x-3">
+          <h1 className="text-xl font-semibold text-slate-100 font-sans tracking-wide">Multi-Agent Planner</h1>
+          <DataStateBadge state="simulated" />
+        </div>
         <p className="text-xs text-muted-foreground mt-1 font-sans">
           Configure, test, and orchestrate high-yield autonomous business agents (Agent 1, Agent 4, and Agent 7).
         </p>

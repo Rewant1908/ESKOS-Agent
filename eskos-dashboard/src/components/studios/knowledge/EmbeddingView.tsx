@@ -2,12 +2,16 @@
 
 import React from "react";
 import { ScatterChart, Compass } from "lucide-react";
+import DataStateBadge from "@/components/ui/DataStateBadge";
 
 export default function EmbeddingView() {
   return (
     <div className="p-6 space-y-6 bg-background text-foreground h-full overflow-y-auto select-none">
       <div>
-        <h1 className="text-xl font-semibold text-slate-100 font-sans tracking-wide">Embedding Explorer</h1>
+        <div className="flex items-center space-x-3">
+          <h1 className="text-xl font-semibold text-slate-100 font-sans tracking-wide">Embedding Explorer</h1>
+          <DataStateBadge state="simulated" />
+        </div>
         <p className="text-xs text-muted-foreground mt-1 font-sans">Inspect semantic vector projections and cluster densities of your embeddings models.</p>
       </div>
 

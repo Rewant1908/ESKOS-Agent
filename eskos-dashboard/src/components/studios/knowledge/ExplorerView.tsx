@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Search, FileText, Network, Cpu, ShieldCheck } from "lucide-react";
+import DataStateBadge from "@/components/ui/DataStateBadge";
 
 const KONG_URL = process.env.NEXT_PUBLIC_KONG_URL || "http://localhost:8000";
 
@@ -171,9 +172,12 @@ export default function ExplorerView() {
                 <span className="text-xs font-bold text-primary uppercase font-mono tracking-widest">
                   {selectedDoc.document_type}
                 </span>
-                <h1 className="text-xl font-bold text-slate-100 font-sans tracking-wide">
-                  {selectedDoc.document_name}
-                </h1>
+                <div className="flex items-center space-x-3">
+                  <h1 className="text-xl font-bold text-slate-100 font-sans tracking-wide">
+                    {selectedDoc.document_name}
+                  </h1>
+                  <DataStateBadge state="live" />
+                </div>
                 <div className="flex items-center space-x-3 text-xs text-muted-foreground font-mono mt-1">
                   <span>ID: {selectedDoc.doc_id}</span>
                   <span>&middot;</span>

@@ -1,15 +1,8 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Layers, RefreshCw, BarChart2, CheckCircle2, ShieldCheck, Clock, Search, HelpCircle, Info } from "lucide-react";
-
-interface QueryPerformanceEntry {
-  query: string;
-  latencyMs: number;
-  confidenceScore: number;
-  sourceDocId: string;
-  timestamp: string;
-}
+import DataStateBadge from "@/components/ui/DataStateBadge";
 
 interface QueryPerformanceEntry {
   query: string;
@@ -64,7 +57,10 @@ export default function RetrievalView() {
       {/* Header */}
       <div className="flex justify-between items-start">
         <div>
-          <h1 className="text-xl font-semibold text-slate-100 font-sans tracking-wide">Retrieval Analytics</h1>
+          <div className="flex items-center space-x-3">
+            <h1 className="text-xl font-semibold text-slate-100 font-sans tracking-wide">Retrieval Analytics</h1>
+            <DataStateBadge state="simulated" />
+          </div>
           <p className="text-xs text-muted-foreground mt-1 font-sans">
             Analyze RAG latency distributions, hybrid query matching scores, and document grounding metrics.
           </p>

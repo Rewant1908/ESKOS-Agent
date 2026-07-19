@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { Database, Network, ShieldCheck, Layers, Loader2, AlertCircle } from "lucide-react";
+import DataStateBadge from "@/components/ui/DataStateBadge";
 
 interface StatsData {
   postgres: {
@@ -110,9 +111,12 @@ export default function DashboardView() {
       {/* Title */}
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-xl font-semibold text-slate-100 font-sans tracking-wide">
-            Knowledge Studio Dashboard
-          </h1>
+          <div className="flex items-center space-x-3">
+            <h1 className="text-xl font-semibold text-slate-100 font-sans tracking-wide">
+              Knowledge Studio Dashboard
+            </h1>
+            <DataStateBadge state="live" />
+          </div>
           <p className="text-xs text-muted-foreground mt-1 font-sans">
             Real-time status of the deterministic knowledge registry and ingestion systems.
           </p>

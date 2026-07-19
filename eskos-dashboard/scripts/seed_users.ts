@@ -1,5 +1,6 @@
-const { Pool } = require("pg");
-const bcrypt = require("bcryptjs");
+import { Pool } from "pg";
+import bcrypt from "bcryptjs";
+import crypto from "crypto";
 
 const pool = new Pool({
   host: process.env.POSTGRES_HOST || "localhost",
@@ -9,18 +10,17 @@ const pool = new Pool({
   database: process.env.POSTGRES_DB || "eskos_knowledge",
 });
 
-const SEED_USERS = [
-  { username: "Navin", password: "password123", role: "reviewer", tenant: "goel-scientific" },
-  { username: "KP", password: "password123", role: "reviewer", tenant: "borosil-scientific" },
-  { username: "Purnima", password: "password123", role: "admin", tenant: "shared" },
-  { username: "Rewant", password: "password123", role: "admin", tenant: "goel-scientific" },
-  { username: "Supervisor Console", password: "password123", role: "admin", tenant: "goel-scientific" }
+const USERS = [
+  { username: "navin", role: "reviewer", tenant: "goel-scientific" },
+  { username: "kp", role: "reviewer", tenant: "borosil-scientific" },
+  { username: "purnima", role: "admin", tenant: "shared" },
+  { username: "admin", role: "admin", tenant: "shared" }
 ];
 
-async function seed() {
+async function main() {
   const client = await pool.connect();
   try {
-    console.log("Creating users table if it does not exist...");
+    // Check if table users exists
     await client.query(`
       CREATE TABLE IF NOT EXISTS users (
         id SERIAL PRIMARY KEY,
@@ -32,9 +32,9 @@ async function seed() {
       );
     `);
 
-    console.log("Seeding user records...");
-    for (const u of SEED_USERS) {
-      const hash = await bcrypt.hash(u.password, 12);
+    for (const u of USERS) {
+      const plaintext = crypto.randomBytes(8).toString("hex"); // 16 characters hex
+      const hash = await bcrypt.hash(plaintext, 12);
       await client.query(`
         INSERT INTO users (username, password_hash, role, tenant)
         VALUES ($1, $2, $3, $4)
@@ -43,16 +43,14 @@ async function seed() {
             role = EXCLUDED.role,
             tenant = EXCLUDED.tenant;
       `, [u.username, hash, u.role, u.tenant]);
-      console.log(`Seeded user: ${u.username}`);
+      console.log(`SEED USER CREATED: username=${u.username} password=${plaintext} — SAVE THIS, IT WILL NOT BE SHOWN AGAIN`);
     }
-
-    console.log("Seeding complete!");
   } catch (err) {
-    console.error("Database seed error:", err);
+    console.error("Error seeding users:", err);
   } finally {
     client.release();
     await pool.end();
   }
 }
 
-seed();
+main();

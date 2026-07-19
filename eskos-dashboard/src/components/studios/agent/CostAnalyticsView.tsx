@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { CircleDollarSign, Coins, TrendingUp, RefreshCw, BarChart2, Database, Loader2 } from "lucide-react";
+import DataStateBadge from "@/components/ui/DataStateBadge";
 
 interface QueryLog {
   id: number;
@@ -94,7 +95,10 @@ export default function CostAnalyticsView() {
       {/* Header */}
       <div className="flex justify-between items-start">
         <div>
-          <h1 className="text-xl font-semibold text-slate-100 font-sans tracking-wide">Token Cost Accounting</h1>
+          <div className="flex items-center space-x-3">
+            <h1 className="text-xl font-semibold text-slate-100 font-sans tracking-wide">Token Cost Accounting</h1>
+            <DataStateBadge state="simulated" />
+          </div>
           <p className="text-xs text-muted-foreground mt-1 font-sans">
             Inspect model operational metrics, input/output token allocation weights, and cumulative session charge summaries.
           </p>

@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import { Compass, Sparkles, AlertTriangle, FileText, CheckCircle2, Loader2, Award, SearchCode } from "lucide-react";
+import DataStateBadge from "@/components/ui/DataStateBadge";
 
 interface AEOResults {
   score: number;
@@ -52,7 +53,10 @@ export default function AEOView() {
     <div className="p-6 space-y-6 bg-background text-foreground h-full overflow-y-auto select-none">
       {/* Header */}
       <div>
-        <h1 className="text-xl font-semibold text-slate-100 font-sans tracking-wide">AEO Intelligence</h1>
+        <div className="flex items-center space-x-3">
+          <h1 className="text-xl font-semibold text-slate-100 font-sans tracking-wide">AEO Intelligence</h1>
+          <DataStateBadge state="simulated" />
+        </div>
         <p className="text-xs text-muted-foreground mt-1 font-sans">
           Audit and optimize product documentation to target featured snippets, direct answer cards, and voice search queries.
         </p>

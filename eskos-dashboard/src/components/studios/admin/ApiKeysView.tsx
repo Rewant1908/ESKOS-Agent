@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import { Key, RefreshCw, Copy, CheckCircle2, Lock, Plus, ToggleLeft, ToggleRight, Trash2, Info } from "lucide-react";
+import DataStateBadge from "@/components/ui/DataStateBadge";
 
 interface ApiKeyItem {
   name: string;
@@ -55,7 +56,10 @@ export default function ApiKeysView() {
       {/* Header */}
       <div className="flex justify-between items-start">
         <div>
-          <h1 className="text-xl font-semibold text-slate-100 font-sans tracking-wide">API Configuration</h1>
+          <div className="flex items-center space-x-3">
+            <h1 className="text-xl font-semibold text-slate-100 font-sans tracking-wide">API Configuration</h1>
+            <DataStateBadge state="simulated" />
+          </div>
           <p className="text-xs text-muted-foreground mt-1 font-sans">
             Provision API keys, configure developer scopes, and manage credentials for secure system ingestion.
           </p>

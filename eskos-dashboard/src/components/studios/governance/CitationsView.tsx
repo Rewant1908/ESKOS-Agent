@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { FileSearch, CheckCircle2, ShieldAlert, Bookmark, Award, Loader2, RefreshCw, Globe, ArrowUpRight } from "lucide-react";
+import DataStateBadge from "@/components/ui/DataStateBadge";
 
 interface Citation {
   quote: string;
@@ -67,7 +68,10 @@ export default function CitationsView() {
       {/* Header */}
       <div className="flex justify-between items-start">
         <div>
-          <h1 className="text-xl font-semibold text-slate-100 font-sans tracking-wide">Citation Viewer</h1>
+          <div className="flex items-center space-x-3">
+            <h1 className="text-xl font-semibold text-slate-100 font-sans tracking-wide">Citation Viewer</h1>
+            <DataStateBadge state="simulated" />
+          </div>
           <p className="text-xs text-muted-foreground mt-1 font-sans">
             Verify citations, text grounding matches, and source credibility rankings for published knowledge documents.
           </p>

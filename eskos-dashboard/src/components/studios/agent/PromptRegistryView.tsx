@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import { Terminal, Save, Check } from "lucide-react";
+import DataStateBadge from "@/components/ui/DataStateBadge";
 
 const KONG_URL = process.env.NEXT_PUBLIC_KONG_URL || "http://localhost:8000";
 
@@ -108,7 +109,10 @@ export default function PromptRegistryView() {
             <div className="flex justify-between items-center select-none border-b border-border pb-4">
               <div>
                 <span className="text-[10px] font-bold text-primary font-mono uppercase tracking-widest">Active Instructions Template</span>
-                <h1 className="text-base font-bold text-slate-200 mt-1 font-sans">{selectedPrompt.name}</h1>
+                <div className="flex items-center space-x-3 mt-1">
+                  <h1 className="text-base font-bold text-slate-200 font-sans">{selectedPrompt.name}</h1>
+                  <DataStateBadge state="live" />
+                </div>
               </div>
 
               <button

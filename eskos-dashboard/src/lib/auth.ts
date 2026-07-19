@@ -1,9 +1,19 @@
 import crypto from "crypto";
+import bcrypt from "bcryptjs";
 
-const SESSION_SECRET = process.env.SESSION_SECRET || "eskos-default-session-secret-key-32chars!";
+if (!process.env.SESSION_SECRET) {
+  throw new Error(
+    "SESSION_SECRET environment variable is required and not set. Generate one with: openssl rand -hex 32"
+  );
+}
+const SESSION_SECRET: string = process.env.SESSION_SECRET;
 
-export function hashPassword(password: string): string {
-  return crypto.createHash("sha256").update(password).digest("hex");
+export async function hashPassword(password: string): Promise<string> {
+  return bcrypt.hash(password, 12);
+}
+
+export async function verifyPassword(password: string, hash: string): Promise<boolean> {
+  return bcrypt.compare(password, hash);
 }
 
 export function encryptSession(data: any): string {

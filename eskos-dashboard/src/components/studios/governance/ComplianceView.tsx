@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { FileBadge, ShieldCheck, ShieldAlert, Cpu, Users, BarChart2, RefreshCw, Info, Loader2, AlertCircle } from "lucide-react";
+import DataStateBadge from "@/components/ui/DataStateBadge";
 
 interface AuditLog {
   draft_id: string;
@@ -83,7 +84,10 @@ export default function ComplianceView() {
       {/* Header */}
       <div className="flex justify-between items-start">
         <div>
-          <h1 className="text-xl font-semibold text-slate-100 font-sans tracking-wide">Compliance Dashboard</h1>
+          <div className="flex items-center space-x-3">
+            <h1 className="text-xl font-semibold text-slate-100 font-sans tracking-wide">Compliance Dashboard</h1>
+            <DataStateBadge state="simulated" />
+          </div>
           <p className="text-xs text-muted-foreground mt-1 font-sans">
             Monitor real-time brand isolation, guardrail violations, and agent-human consensus metrics.
           </p>

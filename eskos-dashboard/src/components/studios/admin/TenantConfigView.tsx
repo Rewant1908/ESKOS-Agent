@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import { Users, Save, RefreshCw, ToggleLeft, ToggleRight, ShieldAlert, Cpu, Award, Globe, Loader2, Info } from "lucide-react";
+import DataStateBadge from "@/components/ui/DataStateBadge";
 
 interface TenantConfig {
   orgId: string;
@@ -77,7 +78,10 @@ export default function TenantConfigView() {
       {/* Header */}
       <div className="flex justify-between items-start">
         <div>
-          <h1 className="text-xl font-semibold text-slate-100 font-sans tracking-wide">Tenant Settings</h1>
+          <div className="flex items-center space-x-3">
+            <h1 className="text-xl font-semibold text-slate-100 font-sans tracking-wide">Tenant Settings</h1>
+            <DataStateBadge state="simulated" />
+          </div>
           <p className="text-xs text-muted-foreground mt-1 font-sans">
             Configure organization settings, region mappings, and multi-agent compliance rules.
           </p>

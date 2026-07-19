@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { Binary, Plus, ShieldCheck, Edit, Trash2, Info, Loader2, AlertCircle, CheckCircle, Search, RefreshCw } from "lucide-react";
+import DataStateBadge from "@/components/ui/DataStateBadge";
 
 interface DocumentAsset {
   doc_id: string;
@@ -167,7 +168,10 @@ export default function MetadataView() {
       {/* Header */}
       <div className="flex justify-between items-start">
         <div>
-          <h1 className="text-xl font-semibold text-slate-100 font-sans tracking-wide">Knowledge Asset Manager</h1>
+          <div className="flex items-center space-x-3">
+            <h1 className="text-xl font-semibold text-slate-100 font-sans tracking-wide">Knowledge Asset Manager</h1>
+            <DataStateBadge state="live" />
+          </div>
           <p className="text-xs text-muted-foreground mt-1 font-sans">
             Validate metadata schemas, configure life-cycle approvals, and maintain ontology mapping.
           </p>

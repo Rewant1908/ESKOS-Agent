@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { ListChecks, Check, X, ShieldAlert, Clock, User, Clipboard, Info, AlertTriangle, Loader2 } from "lucide-react";
+import DataStateBadge from "@/components/ui/DataStateBadge";
 
 interface Draft {
   draft_id: string;
@@ -139,7 +140,10 @@ export default function ReviewQueueView() {
             <div className="flex justify-between items-start border-b border-border pb-4">
               <div>
                 <span className="text-[10px] font-bold text-primary font-mono uppercase tracking-widest">Grounded AI Draft</span>
-                <h1 className="text-base font-bold text-slate-200 mt-1 font-mono">{selectedDraft.draft_id}</h1>
+                <div className="flex items-center space-x-3 mt-1">
+                  <h1 className="text-base font-bold text-slate-200 font-mono">{selectedDraft.draft_id}</h1>
+                  <DataStateBadge state="live" />
+                </div>
                 <div className="flex items-center space-x-4 text-[10px] text-muted-foreground font-mono mt-2">
                   <span className="flex items-center space-x-1"><User className="w-3 h-3 text-slate-500" /> <span>Agent: <span className="text-slate-300">{selectedDraft.author_agent}</span></span></span>
                   <span>•</span>

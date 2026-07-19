@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import { GitBranch, Compass, Search, ShieldCheck, UserCheck, Info, Database, Eye } from "lucide-react";
+import DataStateBadge from "@/components/ui/DataStateBadge";
 
 interface ProvenanceNode {
   id: string;
@@ -29,7 +30,10 @@ export default function ProvenanceView() {
     <div className="p-6 space-y-6 bg-background text-foreground h-full overflow-y-auto select-none">
       {/* Header */}
       <div>
-        <h1 className="text-xl font-semibold text-slate-100 font-sans tracking-wide">Provenance Explorer</h1>
+        <div className="flex items-center space-x-3">
+          <h1 className="text-xl font-semibold text-slate-100 font-sans tracking-wide">Provenance Explorer</h1>
+          <DataStateBadge state="simulated" />
+        </div>
         <p className="text-xs text-muted-foreground mt-1 font-sans">
           Trace content lineage, generation paths, source materials, and security logs for audited document assets.
         </p>

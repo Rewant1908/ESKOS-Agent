@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import { Compass, Sparkles, AlertTriangle, FileText, CheckCircle2, Loader2, Award, Brain } from "lucide-react";
+import DataStateBadge from "@/components/ui/DataStateBadge";
 
 interface GEOResults {
   score: number;
@@ -52,7 +53,10 @@ export default function GEOView() {
     <div className="p-6 space-y-6 bg-background text-foreground h-full overflow-y-auto select-none">
       {/* Header */}
       <div>
-        <h1 className="text-xl font-semibold text-slate-100 font-sans tracking-wide">GEO Intelligence</h1>
+        <div className="flex items-center space-x-3">
+          <h1 className="text-xl font-semibold text-slate-100 font-sans tracking-wide">GEO Intelligence</h1>
+          <DataStateBadge state="simulated" />
+        </div>
         <p className="text-xs text-muted-foreground mt-1 font-sans">
           Audit and optimize technical content to maximize index accessibility and synthesis accuracy inside Generative AI Models (e.g. Gemini, ChatGPT).
         </p>

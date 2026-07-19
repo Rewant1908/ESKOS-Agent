@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { GitBranch, User, Calendar, Loader2, RefreshCw, Eye, ArrowRight, ShieldCheck, FileSpreadsheet } from "lucide-react";
+import DataStateBadge from "@/components/ui/DataStateBadge";
 
 interface Commit {
   hash: string;
@@ -51,7 +52,10 @@ export default function VersionView() {
       {/* Header */}
       <div className="flex justify-between items-start">
         <div>
-          <h1 className="text-xl font-semibold text-slate-100 font-sans tracking-wide">Version Control</h1>
+          <div className="flex items-center space-x-3">
+            <h1 className="text-xl font-semibold text-slate-100 font-sans tracking-wide">Version Control</h1>
+            <DataStateBadge state="live" />
+          </div>
           <p className="text-xs text-muted-foreground mt-1 font-sans">
             Inspect the revision history, parent lineages, and commit logs of the Knowledge Fabric database.
           </p>

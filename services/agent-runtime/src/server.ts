@@ -1,5 +1,5 @@
 import express from "express";
-import { runAgentChat } from "./gemini/agentLoop";
+import { runLangGraphAgentChat as runAgentChat } from "./gemini/langgraph";
 import { resolveOrgId, resolveCallerId } from "./guardrails/orgScope";
 import { ToolRegistry } from "./registries/ToolRegistry";
 import { PromptRegistry } from "./registries/PromptRegistry";

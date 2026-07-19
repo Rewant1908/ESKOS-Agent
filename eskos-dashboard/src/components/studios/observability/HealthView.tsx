@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { Activity, RefreshCw, Server, Database, ShieldAlert, Cpu, Heart, CheckCircle2, Loader2, Info } from "lucide-react";
+import DataStateBadge from "@/components/ui/DataStateBadge";
 
 interface HealthStats {
   postgres: { total_documents: number; total_chunks: number };
@@ -46,7 +47,10 @@ export default function HealthView() {
       {/* Header */}
       <div className="flex justify-between items-start">
         <div>
-          <h1 className="text-xl font-semibold text-slate-100 font-sans tracking-wide">System Health Monitor</h1>
+          <div className="flex items-center space-x-3">
+            <h1 className="text-xl font-semibold text-slate-100 font-sans tracking-wide">System Health Monitor</h1>
+            <DataStateBadge state="live" />
+          </div>
           <p className="text-xs text-muted-foreground mt-1 font-sans">
             Inspect live server telemetry, database connection statuses, and physical node allocations.
           </p>

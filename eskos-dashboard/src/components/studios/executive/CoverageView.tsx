@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import { LayoutDashboard, RefreshCw, BarChart2, CheckCircle2, ShieldCheck, Database, HelpCircle, Info } from "lucide-react";
+import DataStateBadge from "@/components/ui/DataStateBadge";
 
 interface CoverageCategory {
   category: string;
@@ -36,7 +37,10 @@ export default function CoverageView() {
       {/* Header */}
       <div className="flex justify-between items-start">
         <div>
-          <h1 className="text-xl font-semibold text-slate-100 font-sans tracking-wide">Knowledge Coverage Maps</h1>
+          <div className="flex items-center space-x-3">
+            <h1 className="text-xl font-semibold text-slate-100 font-sans tracking-wide">Knowledge Coverage Maps</h1>
+            <DataStateBadge state="simulated" />
+          </div>
           <p className="text-xs text-muted-foreground mt-1 font-sans">
             Monitor topic coverage scores, documentation segment densities, and knowledge gap warning levels.
           </p>

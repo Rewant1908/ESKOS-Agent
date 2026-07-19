@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { HelpCircle, AlertTriangle, RefreshCw, Loader2, Info } from "lucide-react";
+import DataStateBadge from "@/components/ui/DataStateBadge";
 
 interface KnowledgeGap {
   query: string;
@@ -61,7 +62,10 @@ export default function GapView() {
       {/* Header */}
       <div className="flex justify-between items-start">
         <div>
-          <h1 className="text-xl font-semibold text-slate-100 font-sans tracking-wide">Knowledge Gap Analysis</h1>
+          <div className="flex items-center space-x-3">
+            <h1 className="text-xl font-semibold text-slate-100 font-sans tracking-wide">Knowledge Gap Analysis</h1>
+            <DataStateBadge state="live" />
+          </div>
           <p className="text-xs text-muted-foreground mt-1 font-sans">
             Inspect unanswered search queries and identify product specifications lacking sufficient context coverage.
           </p>

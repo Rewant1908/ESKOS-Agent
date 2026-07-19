@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import { SearchCode, Layers, Network } from "lucide-react";
+import DataStateBadge from "@/components/ui/DataStateBadge";
 
 const KONG_URL = process.env.NEXT_PUBLIC_KONG_URL || "http://localhost:8000";
 
@@ -48,7 +49,10 @@ export default function SearchView() {
     <div className="p-6 space-y-6 bg-background text-foreground h-full overflow-y-auto select-none flex flex-col">
       {/* Header */}
       <div>
-        <h1 className="text-xl font-semibold text-slate-100 font-sans tracking-wide font-sans">Search Studio</h1>
+        <div className="flex items-center space-x-3">
+          <h1 className="text-xl font-semibold text-slate-100 font-sans tracking-wide font-sans">Search Studio</h1>
+          <DataStateBadge state="live" />
+        </div>
         <p className="text-xs text-muted-foreground mt-1 font-sans">Compare search routes, dense vector match scoring, and query performance context side-by-side.</p>
       </div>
 

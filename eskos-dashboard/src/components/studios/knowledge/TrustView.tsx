@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { ShieldCheck, Sliders, Check, Info, Loader2, AlertTriangle, CheckCircle, RefreshCw, Layers } from "lucide-react";
+import DataStateBadge from "@/components/ui/DataStateBadge";
 
 interface Weights {
   source_authority: number;
@@ -139,7 +140,10 @@ export default function TrustView() {
       {/* Header */}
       <div className="flex justify-between items-start">
         <div>
-          <h1 className="text-xl font-semibold text-slate-100 font-sans tracking-wide">Trust Center</h1>
+          <div className="flex items-center space-x-3">
+            <h1 className="text-xl font-semibold text-slate-100 font-sans tracking-wide">Trust Center</h1>
+            <DataStateBadge state="live" />
+          </div>
           <p className="text-xs text-muted-foreground mt-1 font-sans">
             Configure credibility weights and source grading matrices used during retrieval ranking.
           </p>

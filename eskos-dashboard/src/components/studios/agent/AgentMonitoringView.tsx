@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { Cpu, Loader2, AlertCircle, RefreshCw } from "lucide-react";
+import DataStateBadge from "@/components/ui/DataStateBadge";
 
 interface QueryLog {
   id: number;
@@ -65,7 +66,10 @@ export default function AgentMonitoringView() {
     <div className="p-6 space-y-6 bg-background text-foreground h-full overflow-y-auto select-none font-sans">
       <div className="flex justify-between items-start">
         <div>
-          <h1 className="text-xl font-semibold text-slate-100 font-sans tracking-wide">Agent Monitoring</h1>
+          <div className="flex items-center space-x-3">
+            <h1 className="text-xl font-semibold text-slate-100 font-sans tracking-wide">Agent Monitoring</h1>
+            <DataStateBadge state="simulated" />
+          </div>
           <p className="text-xs text-muted-foreground mt-1 font-sans">
             Monitor active agent tasks, latency telemetry, and model execution times in real-time.
           </p>
