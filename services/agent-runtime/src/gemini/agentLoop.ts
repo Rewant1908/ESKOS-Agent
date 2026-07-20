@@ -20,7 +20,7 @@ function getClient() {
 }
 
 export interface TraceStep {
-  agent: "planner" | "researcher" | "compliance";
+  agent: "planner" | "researcher" | "compliance" | "authoring" | "seo" | "competitive" | "monitoring" | "learning";
   action: string;
   message?: string;
   timestamp: string;

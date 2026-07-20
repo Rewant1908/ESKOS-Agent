@@ -236,6 +236,16 @@ export default function CostAnalyticsView() {
                           ? "border-primary/20 text-primary bg-primary/5"
                           : item.agent === "researcher"
                           ? "border-amber-500/20 text-amber-400 bg-amber-500/5"
+                          : item.agent === "authoring"
+                          ? "border-purple-500/20 text-purple-400 bg-purple-500/5"
+                          : item.agent === "seo"
+                          ? "border-cyan-500/20 text-cyan-400 bg-cyan-500/5"
+                          : item.agent === "competitive"
+                          ? "border-emerald-500/20 text-emerald-400 bg-emerald-500/5"
+                          : item.agent === "monitoring"
+                          ? "border-blue-500/20 text-blue-400 bg-blue-500/5"
+                          : item.agent === "learning"
+                          ? "border-amber-400/20 text-amber-300 bg-amber-400/5"
                           : "border-rose-500/20 text-rose-400 bg-rose-500/5"
                       }`}>
                         {item.agent}

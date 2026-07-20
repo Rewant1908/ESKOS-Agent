@@ -11,22 +11,30 @@ export interface PromptMetadata {
 
 export class PromptRegistry {
   public static getPrompts(): PromptMetadata[] {
-    const promptFiles = ["planner.md", "researcher.md", "compliance.md"];
-    return promptFiles.map((file) => {
-      const id = file.replace(".md", "");
-      const filePath = path.join(PROMPTS_DIR, file);
-      let instruction = "";
-      try {
-        instruction = fs.readFileSync(filePath, "utf-8");
-      } catch (err) {
-        console.error(`Failed to read prompt file ${file}:`, err);
+    try {
+      if (!fs.existsSync(PROMPTS_DIR)) {
+        return [];
       }
-      return {
-        id,
-        name: id.toUpperCase() + " Prompt Template",
-        instruction,
-      };
-    });
+      const files = fs.readdirSync(PROMPTS_DIR).filter((f) => f.endsWith(".md"));
+      return files.map((file) => {
+        const id = file.replace(".md", "");
+        const filePath = path.join(PROMPTS_DIR, file);
+        let instruction = "";
+        try {
+          instruction = fs.readFileSync(filePath, "utf-8");
+        } catch (err) {
+          console.error(`Failed to read prompt file ${file}:`, err);
+        }
+        return {
+          id,
+          name: id.toUpperCase() + " Prompt Template",
+          instruction,
+        };
+      });
+    } catch (err) {
+      console.error("Failed to read prompts directory:", err);
+      return [];
+    }
   }
 
   public static updatePrompt(id: string, instruction: string): void {
