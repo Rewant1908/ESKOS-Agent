@@ -23,7 +23,7 @@ export default function PromptRegistryView() {
   const fetchPrompts = async () => {
     setLoading(true);
     try {
-      const res = await fetch(`${KONG_URL}/api/v1/agent/prompts`, {
+      const res = await fetch(`/api/v1/agent/prompts`, {
         headers: { 'ngrok-skip-browser-warning': 'true' }
       });
       const data = await res.json();
@@ -54,7 +54,7 @@ export default function PromptRegistryView() {
     setSaving(true);
     setSavedSuccess(false);
     try {
-      const res = await fetch(`${KONG_URL}/api/v1/agent/prompts`, {
+      const res = await fetch(`/api/v1/agent/prompts`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

@@ -20,7 +20,7 @@ export default function ToolRegistryView() {
   const fetchTools = async () => {
     setLoading(true);
     try {
-      const res = await fetch(`${KONG_URL}/api/v1/agent/tools`, {
+      const res = await fetch(`/api/v1/agent/tools`, {
         headers: { 'ngrok-skip-browser-warning': 'true' }
       });
       const data = await res.json();
@@ -37,7 +37,7 @@ export default function ToolRegistryView() {
 
   const toggleTool = async (name: string, currentStatus: boolean) => {
     try {
-      const res = await fetch(`${KONG_URL}/api/v1/agent/tools/toggle`, {
+      const res = await fetch(`/api/v1/agent/tools/toggle`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

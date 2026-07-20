@@ -21,7 +21,7 @@ export default function MemoryInspectorView() {
         ? localStorage.getItem("eskos-active-tenant") || "goel-scientific"
         : "goel-scientific";
 
-      const res = await fetch(`${KONG_URL}/api/v1/agent/memory`, {
+      const res = await fetch(`/api/v1/agent/memory`, {
         headers: { 
           "x-eskos-org-id": activeTenant,
           "ngrok-skip-browser-warning": "true" 

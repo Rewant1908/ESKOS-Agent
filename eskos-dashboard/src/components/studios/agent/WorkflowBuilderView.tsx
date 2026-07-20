@@ -155,10 +155,52 @@ export default function WorkflowBuilderView() {
     }, 1200);
   };
 
-  // Run Simulation
-  const startSimulation = () => {
+  // Run Live Simulation
+  const startSimulation = async () => {
     resetSimulation();
     setSimulationStatus("running");
+    setSimLogs(["[SYSTEM] Initializing Live LangGraph Orchestrator Execution..."]);
+    
+    try {
+      const activeTenant = typeof window !== "undefined"
+        ? localStorage.getItem("eskos-active-tenant") || "goel-scientific"
+        : "goel-scientific";
+
+      setSimLogs(prev => [...prev, `[INIT] Executing multi-agent pipeline for tenant: ${activeTenant}`]);
+      setProgress(25);
+
+      const res = await fetch("/api/v1/agent/chat", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-eskos-org-id": activeTenant,
+        },
+        body: JSON.stringify({ message: "Run multi-agent workflow verification audit and synthesize scientific specs report." }),
+      });
+
+      if (!res.ok) throw new Error(`HTTP Error ${res.status}`);
+
+      const data = await res.json();
+      setProgress(75);
+
+      if (data.trace && Array.isArray(data.trace)) {
+        data.trace.forEach((step: any) => {
+          setSimLogs(prev => [...prev, `[${(step.agent || "NODE").toUpperCase()}] ${step.action}: ${step.message || ""}`]);
+        });
+      }
+
+      setSimLogs(prev => [
+        ...prev,
+        `[SYNTHESIS] Reply Preview: "${(data.reply || "").slice(0, 150)}..."`,
+        `[METRICS] Input Tokens: ${data.cost?.inputTokens || 0} | Output Tokens: ${data.cost?.outputTokens || 0} | USD Cost: $${Number(data.cost?.usd || 0).toFixed(8)}`,
+        "[SYSTEM] Orchestration complete. Live workflow executed successfully! ✅"
+      ]);
+      setProgress(100);
+      setSimulationStatus("completed");
+    } catch (err: any) {
+      setSimLogs(prev => [...prev, `[ERROR] Live execution error: ${err.message}`]);
+      setSimulationStatus("idle");
+    }
   };
 
   const resetSimulation = () => {
@@ -168,60 +210,6 @@ export default function WorkflowBuilderView() {
     setProgress(0);
   };
 
-  useEffect(() => {
-    if (simulationStatus !== "running") return;
-
-    if (currentNodeIdx === -1) {
-      setSimLogs(["[SYSTEM] Initializing Agent Studio Simulation Orchestrator..."]);
-      setCurrentNodeIdx(0);
-      setProgress(5);
-      return;
-    }
-
-    if (currentNodeIdx >= nodes.length) {
-      setSimulationStatus("completed");
-      setProgress(100);
-      setSimLogs(prev => [...prev, "[SYSTEM] Orchestration complete. Workflow verified successfully! ✅"]);
-      return;
-    }
-
-    const currentNode = nodes[currentNodeIdx];
-    const timer = setTimeout(() => {
-      const logsMap: Record<string, string[]> = {
-        ingest: [
-          `[${currentNode.label}] Capturing search query from channel proxy...`,
-          `[${currentNode.label}] Prompt parameters sanitized. Retries set to: ${currentNode.params.retries || 3}`
-        ],
-        rag: [
-          `[${currentNode.label}] Initiating semantic lookups on Qdrant...`,
-          `[${currentNode.label}] Matches retrieved. Top-k score threshold: 0.81. Model: ${currentNode.params.model || "gemini-3.1-flash-lite"}`
-        ],
-        graph: [
-          `[${currentNode.label}] Running relation walks on Neo4j cluster...`,
-          `[${currentNode.label}] Matched 18 neighbor entity clusters (repulsion coefficient: ${currentNode.params.graphRepulsion || 120})`
-        ],
-        compliance: [
-          `[${currentNode.label}] Executing dual-brand leakage inspection rules...`,
-          `[${currentNode.label}] Compliance rules passed. Safety guard level: ${currentNode.params.safetyThreshold || "MEDIUM"}`
-        ],
-        synthesis: [
-          `[${currentNode.label}] Invoking Gemini generating service using model: ${currentNode.params.model || "gemini-3.1-flash-lite"}`,
-          `[${currentNode.label}] Synthesizing complete scientific documentation report context.`
-        ],
-        human: [
-          `[${currentNode.label}] System check paused. Intercepting execution for approval...`,
-          `[${currentNode.label}] Manual bypass confirmed by Administrator supervisor context.`
-        ]
-      };
-
-      setSimLogs(prev => [...prev, ...logsMap[currentNode.type]]);
-      setCurrentNodeIdx(prev => prev + 1);
-      setProgress(Math.round(((currentNodeIdx + 1) / nodes.length) * 95));
-    }, 1500);
-
-    return () => clearTimeout(timer);
-  }, [simulationStatus, currentNodeIdx]);
-
   return (
     <div className="p-6 space-y-6 bg-background text-foreground h-full overflow-y-auto select-none flex flex-col">
       {/* Header */}
@@ -229,7 +217,7 @@ export default function WorkflowBuilderView() {
         <div>
           <div className="flex items-center space-x-3">
             <h1 className="text-xl font-semibold text-slate-100 font-sans tracking-wide">Orchestration & Workflow Builder</h1>
-            <DataStateBadge state="simulated" />
+            <DataStateBadge state="live" />
           </div>
           <p className="text-xs text-muted-foreground mt-1 font-sans">
             Build, edit, and orchestrate custom multi-agent processing pipelines using state machine graphs.
