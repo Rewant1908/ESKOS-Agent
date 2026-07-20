@@ -249,11 +249,12 @@ Transform this validated information into high-grade scientific markdown content
 // Node 5: SEO / GEO / AEO Optimization Node
 async function seoNode(state: AgentState): Promise<Partial<AgentState>> {
   const trace = [...state.trace];
+  const toolCallsMade = [...state.toolCallsMade];
   const addTrace = (agent: TraceStep["agent"], action: string, message?: string) => {
     trace.push({ agent, action, message, timestamp: new Date().toISOString() });
   };
 
-  addTrace("seo", "SEO/GEO/AEO Optimization", "Analyzing entity coverage, generating JSON-LD schemas (FAQPage, Product), and enhancing AEO snippet direct answers.");
+  addTrace("seo", "SEO/GEO/AEO Optimization", "Analyzing entity coverage, mining competitor SEO keywords, generating JSON-LD schemas, and enhancing AEO snippet direct answers.");
 
   if (!state.complianceOk) {
     addTrace("seo", "Optimization Bypassed", "Compliance audit failed; suppressing SEO enhancement.");
@@ -264,6 +265,23 @@ async function seoNode(state: AgentState): Promise<Partial<AgentState>> {
   if (!contentToOptimize) {
     addTrace("seo", "No Content Available", "Skipping SEO optimization due to empty source content.");
     return { trace };
+  }
+
+  // Mine Competitor SEO & Organic Keyword Ranking Data
+  let competitorSeoDataText = "";
+  if (ToolRegistry.isToolActive("audit_competitor_seo")) {
+    try {
+      addTrace("seo", "Competitor Keyword Mining", "Executing audit_competitor_seo to mine organic competitor search terms and ranking opportunities.");
+      const seoAuditRes = await executeTool("audit_competitor_seo", { target_domain: "borosil.com" }, state.ctx);
+      toolCallsMade.push({ name: "audit_competitor_seo", args: { target_domain: "borosil.com" } });
+      if (seoAuditRes?.generated_seo_keywords) {
+        competitorSeoDataText = `Target SEO/GEO Keywords Mined: ${seoAuditRes.generated_seo_keywords.join(", ")}
+Ranking Opportunities: ${seoAuditRes.ranking_opportunities.join("; ")}`;
+      }
+      addTrace("seo", "Keywords Mined", `Extracted ${seoAuditRes?.generated_seo_keywords?.length || 0} high-yield SEO search terms.`);
+    } catch (err: any) {
+      addTrace("seo", "Keyword Audit Warning", `Failed keyword mining: ${err.message}`);
+    }
   }
 
   const prompts = PromptRegistry.getPrompts();
@@ -279,22 +297,25 @@ async function seoNode(state: AgentState): Promise<Partial<AgentState>> {
 Original Content:
 ${contentToOptimize}
 
+Competitor Keyword & SERP Data:
+${competitorSeoDataText || "Standard scientific borosilicate 3.3 keywords"}
+
 Instructions:
 1. Append an Answer Engine Optimization (AEO) summary snippet at the top under an H2.
-2. Generate valid JSON-LD schema (@type FAQPage or Product) in a \`\`\`json block at the bottom.
-3. Optimize entity density for scientific search indexing.`;
+2. Embed high-rank target keywords naturally into semantic headings and body paragraphs.
+3. Generate valid JSON-LD schema (@type FAQPage or Product) in a \`\`\`json block at the bottom.`;
 
   let seoOptimizedContent = "";
   try {
     const result = await model.generateContent(prompt);
     seoOptimizedContent = result.response.text();
-    addTrace("seo", "JSON-LD & GEO Generated", "Successfully injected AEO snippet headers, JSON-LD schema blocks, and entity density optimizations.");
+    addTrace("seo", "JSON-LD & GEO Generated", "Successfully injected AEO snippet headers, competitor keyword terms, and JSON-LD schema blocks.");
   } catch (err: any) {
     seoOptimizedContent = contentToOptimize;
     addTrace("seo", "Optimization Fallback", `Maintained base content due to engine error: ${err.message}`);
   }
 
-  return { seoOptimizedContent, replyText: seoOptimizedContent, trace };
+  return { seoOptimizedContent, replyText: seoOptimizedContent, toolCallsMade, trace };
 }
 
 // Node 6: Competitive Intelligence Node
@@ -305,15 +326,43 @@ async function competitiveNode(state: AgentState): Promise<Partial<AgentState>> 
     trace.push({ agent, action, message, timestamp: new Date().toISOString() });
   };
 
-  const isCompetitiveQuery = /competitor|market|pricing|vs|borosil|goel|benchmark|share|gap|serp/i.test(state.userMessage);
+  const isCompetitiveQuery = /competitor|market|pricing|vs|borosil|goel|benchmark|share|gap|serp|verify|realtime/i.test(state.userMessage);
   
   if (!isCompetitiveQuery) {
     return { trace };
   }
 
-  addTrace("competitive", "Market SERP Scan", "Executing competitor intelligence gathering for target product domain.");
+  addTrace("competitive", "Market & Fact Verification Scan", "Executing real-world factual verification and competitor intelligence gathering.");
 
   let webResultsText = "";
+  let factVerificationText = "";
+
+  // 1. Fact-Check Internal RAG Data against External World Truth
+  if (ToolRegistry.isToolActive("verify_external_facts")) {
+    try {
+      addTrace("competitive", "Real-World Fact Audit", "Executing verify_external_facts to compare internal RAG specs against live external standards.");
+      const factRes = await executeTool("verify_external_facts", { claim: state.userMessage }, state.ctx);
+      toolCallsMade.push({ name: "verify_external_facts", args: { claim: state.userMessage } });
+      factVerificationText = JSON.stringify(factRes, null, 2);
+
+      // Auto-ingest new discoveries into Knowledge Fabric if internal RAG was missing context
+      if (factRes?.external_world_search_hits?.length > 0 && ToolRegistry.isToolActive("ingest_live_knowledge")) {
+        addTrace("competitive", "Live Dynamic Ingestion", "Internal knowledge outdated/incomplete — automatically ingesting live external truth into Knowledge Fabric.");
+        const ingestContent = `Verified External Market Discovery: ${state.userMessage}\n` + factRes.external_world_search_hits.map((h: any) => h.snippet).join("\n");
+        await executeTool("ingest_live_knowledge", {
+          title: `Realtime Fact Sync: ${state.userMessage.slice(0, 40)}`,
+          content: ingestContent,
+          document_type: "realtime_fact_sync"
+        }, state.ctx);
+        toolCallsMade.push({ name: "ingest_live_knowledge", args: { title: "Realtime Fact Sync" } });
+        addTrace("competitive", "Knowledge Fabric Updated", "Dynamic vector & graph re-indexing complete.");
+      }
+    } catch (err: any) {
+      addTrace("competitive", "Fact Verification Warning", `Fact audit warning: ${err.message}`);
+    }
+  }
+
+  // 2. SERP Search Scan
   if (ToolRegistry.isToolActive("web_search")) {
     try {
       const searchRes = await executeTool("web_search", { query: `${state.userMessage} competitor specs borosil goel` }, state.ctx);
@@ -339,10 +388,13 @@ async function competitiveNode(state: AgentState): Promise<Partial<AgentState>> 
 Retrieved Knowledge Base Context:
 ${state.retrievedContext || "None"}
 
+Real-World Fact Verification Audit:
+${factVerificationText || "None"}
+
 Real-time SERP / Web Intelligence:
 ${webResultsText || "None"}
 
-Synthesize a Competitive Intelligence Report detailing product specification differences, pricing/citation opportunities, and content gaps.`;
+Synthesize a Competitive Intelligence Report detailing product specification differences, pricing/citation opportunities, content gaps, and factual alignment.`;
 
   let competitiveIntel = "";
   try {
