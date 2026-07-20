@@ -570,24 +570,46 @@ export default function PlannerView() {
 
             {brandResult && (
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 pt-4 border-t border-border/40">
-                <div className="space-y-4 bg-rose-950/15 border border-rose-500/25 p-4 rounded">
-                  <span className="text-[10px] font-bold text-rose-400 uppercase tracking-widest font-mono flex items-center space-x-1.5">
-                    <AlertTriangle className="w-3.5 h-3.5" />
-                    <span>Hallucination Audit Result</span>
+                <div className={`space-y-4 p-4 rounded border ${
+                  brandResult.hallucination_detected 
+                    ? "bg-rose-950/15 border-rose-500/25" 
+                    : "bg-emerald-950/15 border-emerald-500/25"
+                }`}>
+                  <span className={`text-[10px] font-bold uppercase tracking-widest font-mono flex items-center space-x-1.5 ${
+                    brandResult.hallucination_detected ? "text-rose-400" : "text-emerald-400"
+                  }`}>
+                    {brandResult.hallucination_detected ? (
+                      <>
+                        <AlertTriangle className="w-3.5 h-3.5 text-rose-400" />
+                        <span>Hallucination Detected</span>
+                      </>
+                    ) : (
+                      <>
+                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+                        <span>Factual Alignment Verified</span>
+                      </>
+                    )}
                   </span>
                   
                   <div className="space-y-2">
                     <div>
                       <span className="text-[9px] text-slate-500 font-mono block uppercase">Source Assistant</span>
-                      <span className="text-slate-300 font-bold">{brandResult.audit_detail.ai_assistant}</span>
+                      <span className="text-slate-300 font-bold">{brandResult.audit_detail?.ai_assistant || "perplexity.ai"}</span>
                     </div>
+                    {brandResult.hallucination_detected ? (
+                      <div>
+                        <span className="text-[9px] text-slate-500 font-mono block uppercase">Unverified / Incorrect Claim</span>
+                        <p className="text-rose-300 font-mono leading-relaxed mt-0.5">"{brandResult.audit_detail?.incorrect_claim}"</p>
+                      </div>
+                    ) : (
+                      <div>
+                        <span className="text-[9px] text-slate-500 font-mono block uppercase">Audit Verdict</span>
+                        <p className="text-emerald-300 font-mono leading-relaxed mt-0.5">Zero unverified claims detected. Public AI answers align with ISO 3585 and enterprise scientific specifications.</p>
+                      </div>
+                    )}
                     <div>
-                      <span className="text-[9px] text-slate-500 font-mono block uppercase">Incorrect Claim</span>
-                      <p className="text-rose-300 font-mono leading-relaxed mt-0.5">"{brandResult.audit_detail.incorrect_claim}"</p>
-                    </div>
-                    <div>
-                      <span className="text-[9px] text-slate-500 font-mono block uppercase">Grounded Target Spec</span>
-                      <p className="text-emerald-400 font-mono leading-relaxed mt-0.5">"{brandResult.audit_detail.grounded_specification}"</p>
+                      <span className="text-[9px] text-slate-500 font-mono block uppercase">Grounded Target Specification</span>
+                      <p className="text-emerald-400 font-mono leading-relaxed mt-0.5">"{brandResult.audit_detail?.grounded_specification}"</p>
                     </div>
                   </div>
                 </div>
@@ -596,10 +618,10 @@ export default function PlannerView() {
                   <div>
                     <span className="text-[10px] font-bold text-slate-200 uppercase tracking-widest font-mono flex items-center space-x-1.5 border-b border-border/40 pb-2">
                       <Sparkles className="w-3.5 h-3.5 text-primary" />
-                      <span>Compiled JSON-LD Correction Grounding Patch</span>
+                      <span>Compiled JSON-LD Schema Grounding Patch</span>
                     </span>
                     <pre className="text-[10px] text-indigo-400 font-mono mt-3 whitespace-pre-wrap max-h-40 overflow-y-auto">
-                      {JSON.stringify(brandResult.compiled_schema, null, 2)}
+                      {brandResult.compiled_schema ? JSON.stringify(brandResult.compiled_schema, null, 2) : "// No schema patch needed — content is fully consistent."}
                     </pre>
                   </div>
 
