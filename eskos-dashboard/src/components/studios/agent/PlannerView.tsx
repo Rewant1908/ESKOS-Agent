@@ -22,7 +22,7 @@ export default function PlannerView() {
   const [seoResult, setSeoResult] = useState<any>(null);
 
   // Agent 3: Competitive Intelligence State
-  const [compQuery, setCompQuery] = useState("Compare Goel Scientific pressure reactors vs Borosil Scientific glass columns on thermal expansion and pricing");
+  const [compQuery, setCompQuery] = useState("Benchmark Borosil / Goel Scientific pressure reactors vs De Dietrich QVF and Buchiglasuster pilot plants on pressure limits and ISO 3585 thermal shock specs");
   const [compLoading, setCompLoading] = useState(false);
   const [compResult, setCompResult] = useState<any>(null);
 
