@@ -1,10 +1,55 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import pool from "@/lib/db";
-import { verifyPassword, encryptSession } from "@/lib/auth";
+import { verifyPassword, encryptSession, hashPassword } from "@/lib/auth";
+
+let tableChecked = false;
+
+async function ensureUsersTable() {
+  if (tableChecked) return;
+  try {
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS users (
+        id SERIAL PRIMARY KEY,
+        username VARCHAR(100) UNIQUE NOT NULL,
+        password_hash VARCHAR(255) NOT NULL,
+        role VARCHAR(50) NOT NULL,
+        tenant VARCHAR(100) NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+
+    const checkRes = await pool.query("SELECT COUNT(*) FROM users");
+    const count = parseInt(checkRes.rows[0]?.count || "0", 10);
+
+    if (count === 0) {
+      const defaultUsers = [
+        { username: "admin", password: "admin123", role: "admin", tenant: "shared" },
+        { username: "navin", password: "navin123", role: "reviewer", tenant: "goel-scientific" },
+        { username: "kp", password: "kp123", role: "reviewer", tenant: "borosil-scientific" },
+        { username: "purnima", password: "purnima123", role: "admin", tenant: "shared" },
+      ];
+
+      for (const u of defaultUsers) {
+        const hash = await hashPassword(u.password);
+        await pool.query(
+          `INSERT INTO users (username, password_hash, role, tenant)
+           VALUES ($1, $2, $3, $4)
+           ON CONFLICT (username) DO NOTHING;`,
+          [u.username, hash, u.role, u.tenant]
+        );
+      }
+    }
+    tableChecked = true;
+  } catch (err) {
+    console.error("[auth] Failed to auto-initialize users table:", err);
+  }
+}
 
 export async function POST(request: Request) {
   try {
+    await ensureUsersTable();
+
     const { username, password } = await request.json();
 
     if (!username || !password) {
