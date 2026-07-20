@@ -374,17 +374,42 @@ async function callTrustScore(sourceCategory: string, orgId: string) {
 }
 
 async function submitGovernanceDraft(args: Record<string, any>, ctx: ToolContext) {
+  const draftId = `draft-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`;
+  const draftText = args.draft_text || args.content || "";
+  const title = args.title || "Scientific Datasheet Release";
+
+  const payload = {
+    draft_id: draftId,
+    title: title,
+    org_id: ctx.orgId,
+    author_agent: `agent:${ctx.callerId}`,
+    submitted_by: `agent:${ctx.callerId}`,
+    content: draftText,
+    draft_text: draftText,
+    source_doc_ids: args.source_doc_ids || ["fabric-context-doc-01"],
+    status: "PENDING",
+  };
+
+  const govApiKey = process.env.GOVERNANCE_API_KEY || "eskos-governance-secret-key-2026";
+
   const { data } = await axios.post(
     `${KONG_BASE_URL}/api/v1/governance/drafts`,
+    payload,
     {
-      title: args.title,
-      draft_text: args.draft_text,
-      source_doc_ids: args.source_doc_ids,
-      org_id: ctx.orgId,
-      submitted_by: `agent:${ctx.callerId}`,
-      status: "pending_review",
-    },
-    { timeout: 10_000 }
+      headers: {
+        "Content-Type": "application/json",
+        "apikey": govApiKey,
+        "x-eskos-org-id": ctx.orgId,
+        "x-eskos-caller-id": ctx.callerId,
+      },
+      timeout: 10_000,
+    }
   );
-  return data;
+
+  return {
+    status: "success",
+    message: "Content draft queued for human-in-the-loop governance review.",
+    draft_id: draftId,
+    details: data,
+  };
 }

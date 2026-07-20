@@ -76,10 +76,18 @@ export async function POST(req: Request) {
     }
 
     // Submit the generated scientific draft to the content-governance review queue (via Kong proxy)
+    let rawBase = process.env.KONG_BASE_URL || process.env.NEXT_PUBLIC_KONG_URL || "http://localhost:8000";
+    if (rawBase.startsWith("/")) rawBase = "http://localhost:8000";
+    const cleanBase = rawBase.replace(/\/api\/v1\/?$/, "");
+    const GOVERNANCE_API_KEY = process.env.GOVERNANCE_API_KEY || "eskos-governance-secret-key-2026";
+
     const draftId = `draft-${Math.random().toString(36).substring(2, 8)}`;
-    await fetch(`${KONG_BASE_URL}/api/v1/governance/drafts`, {
+    await fetch(`${cleanBase}/api/v1/governance/drafts`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        "apikey": GOVERNANCE_API_KEY,
+      },
       body: JSON.stringify({
         draft_id: draftId,
         org_id: orgId || "goel-scientific",

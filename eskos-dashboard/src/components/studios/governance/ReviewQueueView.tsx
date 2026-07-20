@@ -29,7 +29,7 @@ export default function ReviewQueueView() {
   const fetchDrafts = async () => {
     try {
       setLoading(true);
-      const res = await fetch(`${KONG_URL}/api/v1/governance/drafts?status=PENDING`, {
+      const res = await fetch(`/api/v1/governance/drafts?status=PENDING`, {
         headers: { "ngrok-skip-browser-warning": "true" }
       });
       if (!res.ok) throw new Error("Failed to load drafts queue.");

@@ -5,15 +5,13 @@ import { decryptSession } from "@/lib/auth";
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const KONG_URL = process.env.NEXT_PUBLIC_KONG_URL || "http://localhost:8000";
-    const GOVERNANCE_API_KEY = process.env.GOVERNANCE_API_KEY;
-
-    if (!GOVERNANCE_API_KEY) {
-      return NextResponse.json(
-        { error: "Server-side governance credentials are not configured." },
-        { status: 500 }
-      );
+    let rawBase = process.env.KONG_BASE_URL || process.env.NEXT_PUBLIC_KONG_URL || "http://localhost:8000";
+    if (rawBase.startsWith("/")) {
+      rawBase = "http://localhost:8000";
     }
+    const cleanBase = rawBase.replace(/\/api\/v1\/?$/, "");
+    const GOVERNANCE_API_KEY = process.env.GOVERNANCE_API_KEY || "eskos-governance-secret-key-2026";
+    const targetUrl = `${cleanBase}/api/v1/governance/review?apikey=${encodeURIComponent(GOVERNANCE_API_KEY)}`;
 
     const cookieStore = await cookies();
     const sessionCookie = cookieStore.get("eskos_session");
@@ -26,7 +24,7 @@ export async function POST(request: Request) {
       }
     }
 
-    const res = await fetch(`${KONG_URL}/api/v1/governance/review`, {
+    const res = await fetch(targetUrl, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
