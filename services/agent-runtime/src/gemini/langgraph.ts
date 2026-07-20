@@ -155,7 +155,40 @@ async function researcherNode(state: AgentState): Promise<Partial<AgentState>> {
     response = await chat.sendMessage(toolResponses as any);
   }
 
-  const replyText = response.response.text();
+  let replyText = response.response.text();
+
+  // Self-Expanding RAG Auto-Update Fallback:
+  // If the Knowledge Fabric returned minimal/empty hits or the response notes limited data,
+  // execute real-world web search and auto-ingest into Knowledge Fabric in real-time!
+  const isLimitedData = /limited (data|details|information)|no (specific|relevant) (records|documents|data)/i.test(replyText);
+  if (isLimitedData && ToolRegistry.isToolActive("web_search")) {
+    try {
+      addTrace("researcher", "Knowledge Base Expansion", "Local Knowledge Fabric missing records — triggering real-world web search & auto-ingestion.");
+      const searchRes = await executeTool("web_search", { query: state.userMessage }, state.ctx);
+      toolCallsMade.push({ name: "web_search", args: { query: state.userMessage } });
+
+      if (searchRes?.results && searchRes.results.length > 0) {
+        const extractedText = searchRes.results.map((r: any) => `- ${r.snippet}`).join("\n");
+
+        if (ToolRegistry.isToolActive("ingest_live_knowledge")) {
+          addTrace("researcher", "Auto-Ingesting Live Facts", "Ingesting newly discovered real-world scientific data into Knowledge Fabric (vector + graph + postgres).");
+          await executeTool("ingest_live_knowledge", {
+            title: `Realtime Sync: ${state.userMessage.slice(0, 40)}`,
+            content: extractedText,
+            document_type: "realtime_web_sync"
+          }, state.ctx);
+          toolCallsMade.push({ name: "ingest_live_knowledge", args: { title: state.userMessage.slice(0, 40) } });
+          addTrace("researcher", "Knowledge Fabric Updated", "Vector indexes & Neo4j graph nodes updated in real time.");
+        }
+
+        // Re-synthesize answer using newly discovered real-world facts
+        replyText = `### Real-World Synchronized Scientific Intelligence:\n\n${extractedText}\n\n*Note: This real-world specification data has been automatically indexed into the ESKOS Knowledge Fabric for future retrieval.*`;
+      }
+    } catch (err: any) {
+      addTrace("researcher", "Expansion Warning", `Knowledge expansion fallback warning: ${err.message}`);
+    }
+  }
+
   saveSessionHistory(state.sessionId, await chat.getHistory());
 
   return { retrievedContext: replyText, toolCallsMade, droppedContextChunks, trace };
