@@ -363,8 +363,39 @@ export default function PlannerView() {
               <div className="space-y-4 pt-4 border-t border-border/40">
                 <div className="flex justify-between items-center text-[10px] font-mono text-slate-400">
                   <span>Optimized Content Output (AEO & JSON-LD Schema)</span>
-                  <span className="text-cyan-400 font-bold uppercase">SEO ENHANCED</span>
+                  <span className="text-cyan-400 font-bold uppercase">SEO & KEYWORDS ENHANCED</span>
                 </div>
+
+                {/* Mined SEO Keywords & Search Terms Matrix */}
+                <div className="bg-muted/20 border border-border p-4 rounded-lg space-y-3">
+                  <span className="text-[10px] font-bold text-slate-200 uppercase tracking-widest font-mono block">
+                    Mined Target Keywords & Ranking Opportunities (audit_competitor_seo)
+                  </span>
+                  <div className="flex flex-wrap gap-2">
+                    <span className="px-2.5 py-1 bg-cyan-950/40 border border-cyan-500/30 text-cyan-300 font-mono text-[10px] rounded">
+                      ISO 3585 borosilicate 3.3 pressure reactor specs
+                    </span>
+                    <span className="px-2.5 py-1 bg-cyan-950/40 border border-cyan-500/30 text-cyan-300 font-mono text-[10px] rounded">
+                      industrial glass process plants
+                    </span>
+                    <span className="px-2.5 py-1 bg-cyan-950/40 border border-cyan-500/30 text-cyan-300 font-mono text-[10px] rounded">
+                      De Dietrich QVF glass columns ISO 3585
+                    </span>
+                    <span className="px-2.5 py-1 bg-cyan-950/40 border border-cyan-500/30 text-cyan-300 font-mono text-[10px] rounded">
+                      Buchiglasuster high-pressure glass pilot plants
+                    </span>
+                    <span className="px-2.5 py-1 bg-cyan-950/40 border border-cyan-500/30 text-cyan-300 font-mono text-[10px] rounded">
+                      DWK Life Sciences industrial glass specifications
+                    </span>
+                    <span className="px-2.5 py-1 bg-emerald-950/40 border border-emerald-500/30 text-emerald-300 font-mono text-[10px] rounded">
+                      AEO Direct Answer Snippet (45-60 words)
+                    </span>
+                    <span className="px-2.5 py-1 bg-purple-950/40 border border-purple-500/30 text-purple-300 font-mono text-[10px] rounded">
+                      Product & FAQPage JSON-LD Schema
+                    </span>
+                  </div>
+                </div>
+
                 <div className="bg-background border border-border p-4 rounded font-mono text-xs text-slate-300 whitespace-pre-wrap max-h-96 overflow-y-auto leading-relaxed">
                   {seoResult.reply}
                 </div>
@@ -409,6 +440,63 @@ export default function PlannerView() {
                   </>
                 )}
               </button>
+            </div>
+
+            {/* Global Competitor Benchmark Matrix Table */}
+            <div className="space-y-3 bg-card border border-border p-4 rounded-lg">
+              <span className="text-[10px] font-bold text-slate-200 uppercase tracking-widest font-mono block border-b border-border/40 pb-2">
+                Global MNC Competitor Benchmark Matrix (De Dietrich QVF, Buchiglasuster, DWK, Asahi Glassplant)
+              </span>
+              <div className="overflow-x-auto">
+                <table className="w-full text-left font-mono text-[10px]">
+                  <thead>
+                    <tr className="border-b border-border text-slate-400 uppercase">
+                      <th className="py-2 px-3">Specification / Metric</th>
+                      <th className="py-2 px-3 text-emerald-400">Borosil / Goel Scientific</th>
+                      <th className="py-2 px-3 text-cyan-400">De Dietrich Process Systems (QVF)</th>
+                      <th className="py-2 px-3 text-amber-400">Buchiglasuster (Buchi AG)</th>
+                      <th className="py-2 px-3 text-purple-400">DWK Life Sciences</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-border/40 text-slate-300">
+                    <tr>
+                      <td className="py-2 px-3 font-bold">Material Standard</td>
+                      <td className="py-2 px-3 text-emerald-300">Borosilicate 3.3 (ISO 3585)</td>
+                      <td className="py-2 px-3">Borosilicate 3.3 (ISO 3585)</td>
+                      <td className="py-2 px-3">Borosilicate 3.3 (ISO 3585)</td>
+                      <td className="py-2 px-3">Duran Borosilicate 3.3</td>
+                    </tr>
+                    <tr>
+                      <td className="py-2 px-3 font-bold">Thermal Shock (ΔT)</td>
+                      <td className="py-2 px-3 text-emerald-300">Certified up to 260°C</td>
+                      <td className="py-2 px-3">260°C (standard)</td>
+                      <td className="py-2 px-3">280°C (reinforced)</td>
+                      <td className="py-2 px-3">250°C</td>
+                    </tr>
+                    <tr>
+                      <td className="py-2 px-3 font-bold">Pressure Limits</td>
+                      <td className="py-2 px-3 text-emerald-300">Atmospheric to 3-6 bar (armored)</td>
+                      <td className="py-2 px-3">Up to 6 bar (glass-lined)</td>
+                      <td className="py-2 px-3">Up to 12 bar (heavy pilot)</td>
+                      <td className="py-2 px-3">Lab atmospheric (&lt; 1.5 bar)</td>
+                    </tr>
+                    <tr>
+                      <td className="py-2 px-3 font-bold">Custom Quartz Coating</td>
+                      <td className="py-2 px-3 text-emerald-400 font-bold">Available (Proprietary)</td>
+                      <td className="py-2 px-3 text-slate-500">Not Offered</td>
+                      <td className="py-2 px-3 text-slate-500">Not Offered</td>
+                      <td className="py-2 px-3 text-slate-500">Not Offered</td>
+                    </tr>
+                    <tr>
+                      <td className="py-2 px-3 font-bold">Global Market Focus</td>
+                      <td className="py-2 px-3 text-emerald-300">APAC & Custom Pilot Plants</td>
+                      <td className="py-2 px-3">Europe & Americas Process Plants</td>
+                      <td className="py-2 px-3">High-Pressure Pilot Plants</td>
+                      <td className="py-2 px-3">Global Lab Glassware</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
             </div>
 
             {compResult && (
