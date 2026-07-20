@@ -49,11 +49,16 @@ export default function PlannerView() {
 
   // Generic runner via Agent Chat API
   const runAgentChat = async (message: string, orgId: string = "goel-scientific") => {
-    const res = await fetch("/api/v1/agent/chat", {
+    const KONG_URL = typeof window !== "undefined"
+      ? process.env.NEXT_PUBLIC_KONG_URL || "http://localhost:8000"
+      : "http://localhost:8000";
+
+    const res = await fetch(`${KONG_URL}/api/v1/agent/chat`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         "x-eskos-org-id": orgId,
+        "ngrok-skip-browser-warning": "true",
       },
       body: JSON.stringify({ message }),
     });

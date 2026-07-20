@@ -161,6 +161,9 @@ services:
   # ── Agent Runtime Service ───────────────────────────────────────────
   - name: agent-runtime-service
     url: http://agent-runtime:8091
+    connect_timeout: 60000
+    read_timeout: 120000
+    write_timeout: 120000
     plugins:
       - name: cors
         config:
