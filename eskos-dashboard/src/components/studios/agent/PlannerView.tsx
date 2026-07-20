@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import { 
   Cpu, FileText, ShieldCheck, DollarSign, Play, Loader2, Award, 
-  Sparkles, AlertTriangle, Search, Activity, Brain, CheckCircle2, ChevronRight
+  Sparkles, AlertTriangle, Search, Activity, Brain, CheckCircle2, ChevronRight, BarChart2
 } from "lucide-react";
 import DataStateBadge from "@/components/ui/DataStateBadge";
 
