@@ -421,7 +421,7 @@ export default function WorkflowBuilderView() {
                     >
                       <option value="gemini-3.1-flash-lite">gemini-3.1-flash-lite</option>
                       <option value="gemini-2.0-flash">gemini-2.0-flash</option>
-                      <option value="gemini-3.5-flash">gemini-3.5-flash</option>
+                      <option value="gemini-2.5-flash">gemini-2.5-flash</option>
                     </select>
                   </div>
 
