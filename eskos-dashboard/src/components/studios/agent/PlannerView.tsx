@@ -49,11 +49,7 @@ export default function PlannerView() {
 
   // Generic runner via Agent Chat API
   const runAgentChat = async (message: string, orgId: string = "goel-scientific") => {
-    const KONG_URL = typeof window !== "undefined"
-      ? process.env.NEXT_PUBLIC_KONG_URL || "http://localhost:8000"
-      : "http://localhost:8000";
-
-    const res = await fetch(`${KONG_URL}/api/v1/agent/chat`, {
+    const res = await fetch("/api/v1/agent/chat", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -63,7 +59,8 @@ export default function PlannerView() {
       body: JSON.stringify({ message }),
     });
     if (!res.ok) {
-      throw new Error(`Agent execution failed with HTTP status ${res.status}`);
+      const errJson = await res.json().catch(() => ({}));
+      throw new Error(errJson.detail || errJson.error || `Agent execution failed with HTTP status ${res.status}`);
     }
     return res.json();
   };
